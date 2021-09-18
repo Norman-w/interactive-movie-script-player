@@ -75,7 +75,7 @@ class InteractiveMovieScriptPlayer extends Component {
     let defaultMovie = {
       ...emptyMovieInfo,
       id: 'default_test_movie',
-      movieUrl: 'http://www.w3schools.com/html/mov_bbb.mp4',
+      movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
       posterUrl: 'https://www.enni.group/file/test2.png'
     };
     let defaultPoint = {...emptyStopPoint, triggers: ['movie', 'game']};

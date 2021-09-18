@@ -17,12 +17,11 @@ export default class MovieScriptFactory {
                                     duration: 0.00,
                                     id: ''
                                   }) {
-    let ret =
+      if (!param.id)
       {
-        ...param,
-        id: new Date().getDate()
-      };
-    return ret;
+          param.id= new Date().getDate();
+      }
+    return param;
   }
   //endregion
 }

@@ -1,12 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import InteractiveMovieScriptPlayer from './InteractiveMovieScriptPlayer';
+import InteractiveMovieScriptEditor from './InteractiveMovieScriptEditor';
 
 ReactDOM.render(
-  <React.StrictMode>
-    <InteractiveMovieScriptPlayer />
-  </React.StrictMode>,
+    <InteractiveMovieScriptEditor />,
   document.getElementById('root')
 );
 if (module.hot)
