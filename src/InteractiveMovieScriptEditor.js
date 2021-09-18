@@ -12,24 +12,67 @@ import "video-react/dist/video-react.css"; // import css
 import './video-react-rewrite.css';
 //endregion
 
+//region swal2
+import Swal from 'sweetalert2';
+import withReactContent from 'sweetalert2-react-content'
+//endregion
+
 import MovieScriptFactory from './movieScriptFactory' ;
 import JsonComparer from "./jsonComparer";
+import InteractiveMovieScriptPlayer from "./InteractiveMovieScriptPlayer";
 
 
 
 const { Step } = Steps;
-
+const MySwal = withReactContent(Swal)
 
 class InteractiveMovieScriptEditor extends Component {
     state={
-        currentMovieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
-        currentPosterUrl: 'https://www.enni.group/file/test2.png',
+        currentMovie: {},
         currentMovieState:null,
         timeSliderRange:0,
         timeSliderValue:0,
-        timeSliderMarks:{},
+        timeSliderMarks:{0:'开始'},
         authPlayWhenSlid: false,
         playerPlaying:false,
+        currentSelectedNode:0,
+        scripts: {
+            //初始的脚本
+            initScript: {
+                movies: {
+                    mid1: {
+                        url: 'https://www.enni.group/file/testmovie/2.MP4',
+                        posterUrl: 'https://www.enni.group/file/test2.png',
+                    },
+                    mid2:
+                        {
+                            url: 'https://www.enni.group/file/testmovie/3.MP4',
+                            posterUrl: 'https://www.enni.group/file/test1.png',
+                        }
+                },
+                anchors: {},
+            },
+            //设置电话的脚本
+            setMobileScript:
+                {
+                    movies: {
+                        mobileMovie1: {
+                            url: 'https://www.enni.group/file/testmovie/2.MP4',
+                            posterUrl: 'https://www.enni.group/file/test2.png',
+                        },
+                        mobileMovie2:
+                            {
+                                url: 'https://www.enni.group/file/testmovie/3.MP4',
+                                posterUrl: 'https://www.enni.group/file/test1.png',
+                            }
+                    },
+                    anchors: {
+
+                    },
+                }
+        },
+        //已经添加到当前编辑器中的视频素材列表
+        moviesSources:[],
     }
     //视频文件是否正在加载中
     movieLoading=false;
@@ -76,19 +119,25 @@ class InteractiveMovieScriptEditor extends Component {
     //region 当时间轴发生变化的时候
     onTimeSliderChange(e)
     {
-        this.timeSliderSeeking = true;
-        // console.log(e);
+        if (this.timeSliderSeeking === true)
+        {
+            // console.log('当前正在修改')
+            return;
+        }
         this.setState({timeSliderValue:e});
     }
     //endregion
     //region 当时间轴发生鼠标抬起后变化的时候
     onTimeSliderAfterChange(e)
     {
-        // console.log(e);
+        this.timeSliderSeeking = true;
+        // console.log('松开的时候:',e);
         this.player.seek(e);
+        this.setState({timeSliderValue:e});
+
         let playerState = this.player.getState().player;
         let paused = playerState.paused;
-        console.log(this.player);
+        // console.log(this.player);
         if (this.state.authPlayWhenSlid) {
             if (paused) {
                 this.player.play();
@@ -101,6 +150,32 @@ class InteractiveMovieScriptEditor extends Component {
             }
         }
         this.timeSliderSeeking=false;
+
+        // console.log(e);
+        // this.setState({timeSliderValue:e});
+    }
+    onTimeNodeSliderAfterChange(e)
+    {
+        this.timeSliderSeeking = true;
+        this.player.seek(e);
+        this.setState({timeSliderValue:e,currentSelectedNode:e});
+
+        let playerState = this.player.getState().player;
+        let paused = playerState.paused;
+        // console.log(this.player);
+        if (this.state.authPlayWhenSlid) {
+            if (paused) {
+                this.player.play();
+            }
+        }
+        else {
+            // console.log();
+            if (!paused) {
+                this.player.pause();
+            }
+        }
+        this.timeSliderSeeking=false;
+
     }
     //endregion
     //region 切换是否自动播放
@@ -121,6 +196,19 @@ class InteractiveMovieScriptEditor extends Component {
         o[currentNode] = ''+keys.length;
         this.setState({timeSliderMarks:o});
         console.log('现在的节点是:',o);
+
+        //region 生成和添加到scriptAnchors中
+        if(!this.scriptAnchors)
+        {
+            this.scriptAnchors = [];
+        }
+        let mf = new MovieScriptFactory();
+        console.log(this.initMovieState);
+        let movie = mf.CreateMovie(null,'设置视频1', '这是速配的第一次测试使用视频做设置向导', this.initMovieState.duration,null,this.initMovieState.src,'mp4');
+        let node = mf.CreateAnchorInformation4Video(movie,'设置发货人手机', '请设置您用于打印在快递面单上的发货人手机号码', null,null,0,currentNode,currentNode,'setMobile');
+        this.state.scripts.setMobileScript.anchors[node.id]=(node);
+        console.log('现在 节点内容有:', this.state.scripts);
+        //endregion
     }
     //endregion
     //region 点击了删除节点信息
@@ -128,14 +216,11 @@ class InteractiveMovieScriptEditor extends Component {
     {
         let playerState = this.player.getState();
         console.log(playerState)
-        if (playerState.player.paused)
-        {
-            let marks = this.state.timeSliderMarks;
-            console.log('删除前:',marks);
-            delete marks[this.state.timeSliderValue];
-            console.log('删除后:', marks);
-            this.setState({timeSliderMarks:marks})
-        }
+        let marks = this.state.timeSliderMarks;
+        console.log('删除前:',marks, '要删除的是:', this.state.currentSelectedNode);
+        delete marks[this.state.currentSelectedNode];
+        console.log('删除后:', marks);
+        this.setState({timeSliderMarks:marks})
     }
     //endregion
     //region 播放器暂停事件
@@ -151,20 +236,86 @@ class InteractiveMovieScriptEditor extends Component {
     }
     //endregion
   //region 当播放器的当前播放时间更新
+    //region 节点选择模式切换
+    onSelectModeChange (e)
+    {
+        this.setState({onlySelectNode:e});
+    }
+    //endregion
   onPlayerTimeUpdate(e)
   {
+      // console.log('事件更新事件:',e);
     this.setState({timeSliderValue:e.target.currentTime});
   }
   //endregion
+    //region 视频预览
+    onClickInnerBtn = (e)=>
+    {
+        console.log('you are clicked button in html', e.target.innerText)
+        MySwal.clickConfirm();
+    }
+    onClickPreViewBtn()
+    {
+        MySwal.fire({
+            title: <p>Hello World</p>,
+            html:
+                <>
+                    {/*<Button onClick={this.onClickInnerBtn.bind(this)} type={'primary'}>按钮1文字</Button>*/}
+                    {/*<Button onClick={this.onClickInnerBtn.bind(this)} type={'primary'}>按钮3文字</Button>*/}
+                    <InteractiveMovieScriptPlayer scrpits={this.state.scripts}/>
+                </>
+            ,
+            // footer: 'Copyright 2018',
+            showConfirmButton : false,
+
+            width:1000,
+            height:800,
+            didOpen: () => {
+                // `MySwal` is a subclass of `Swal`
+                //   with all the same instance & static methods
+                // MySwal.clickConfirm()
+            }
+        }).then(() => {
+            // return MySwal.fire(<p>Shorthand works too</p>)
+        })
+    }
+    //endregion
+    //region 添加视频素材
+    onClickAddMovieSourceBtn()
+    {
+        this.player.load();
+        // let movieUrl = 'https://www.enni.group/file/testmovie/2.MP4';
+        // let moviePoster = 'https://www.enni.group/file/test2.png';
+        // let mf = new MovieScriptFactory();
+        // // console.log(this.initMovieState);
+        // let movie = mf.CreateMovie('initMovieSet1','设置视频1', '这是速配的第一次测试使用视频做设置向导', this.initMovieState.duration,null,this.initMovieState.src,'mp4');
+        // let movies = this.state.moviesSources;
+        // movies.push(movie);
+        // this.setState({moviesSources:movies});
+        // console.log('添加完了视频是:',movies);
+    }
+    //endregion
+    //region 点击视频素材
+    onClickMovieSourceBtn(item,index)
+    {
+        this.setState({currentMovie:item});
+    }
+    //endregion
     render() {
-        let movieUrl = this.state.currentMovieUrl;
-        let posterUrl = this.state.currentPosterUrl;
+        let movieUrl = this.state.currentMovie.movieUrl;
+        let posterUrl = this.state.currentMovie.posterUrl;
         let duration = this.state.timeSliderRange;
         let onAutoPlayChange = this.onAutoPlayChange.bind(this);
+        let onSelectModeChange = this.onSelectModeChange.bind(this);
         let onClickAddAnchorBtn = this.onClickAddAnchorBtn.bind(this);
         let onClickRemoveAnchorBtn = this.onClickRemoveAnchorBtn.bind(this);
+        let onClickPreViewBtn = this.onClickPreViewBtn.bind(this);
         let sliderMarks = this.state.timeSliderMarks;
         let onPlayerTimeUpdate = this.onPlayerTimeUpdate.bind(this);
+        let onTimeNodeSliderAfterChange= this.onTimeNodeSliderAfterChange.bind(this);
+        let moviesSources= this.state.moviesSources;
+        let onClickAddMovieSourceBtn = this.onClickAddMovieSourceBtn.bind(this);
+        let onClickMovieSourceBtn = this.onClickMovieSourceBtn.bind(this);
         let tipFormatter = (value)=>
         {
             let sec = value/1000;
@@ -194,24 +345,46 @@ class InteractiveMovieScriptEditor extends Component {
                 <div id={'下方时间轴和按钮'} className={classNames.editorBottomLine}>
                     <div id={'编辑器内部'} className={classNames.editorContent}>
                         <div id={'按钮集'} className={classNames.buttons}>
+                            <Button  onClick={onClickAddMovieSourceBtn}>添加视频</Button>
                             <div className={classNames.lineFlexRow}><div>拖拽后自动播放</div><Switch checked={this.state.authPlayWhenSlid}  defaultChecked size={'small'} onChange={onAutoPlayChange} /></div>
                             <Button  onClick={onClickAddAnchorBtn}>添加节点</Button>
-                            <Button disabled={this.state.playerPlaying} onClick={onClickRemoveAnchorBtn}>删除节点</Button>
+                            <Button onClick={onClickRemoveAnchorBtn}>删除节点</Button>
+                            <Button onClick={onClickPreViewBtn}>预览</Button>
                         </div>
                         <div id={'时间轴'} className={classNames.timeSlider}>
                             <Slider
-                                // tipFormatter={tipFormatter}
-                                // range={true}
-                                //     step={this.state.playerPlaying?0.001:null}
-                              step={0.001}
-                                    // defaultValue={[2000,5000]}
+                                step={0.001}
                                 value={this.state.timeSliderValue}
                                     onChange={this.onTimeSliderChange.bind(this)}
                                     onAfterChange={this.onTimeSliderAfterChange.bind(this)}
                                     max={duration}
-                                    marks={sliderMarks}
                             ></Slider>
                         </div>
+                        <div id={'已选择节点的时间轴'} className={classNames.timeSlider}>
+                            <Slider
+                                step={null}
+    value={this.state.timeSliderValue}
+    onAfterChange={onTimeNodeSliderAfterChange}
+    max={duration}
+    marks={sliderMarks}
+                                included={false}
+    />
+                        </div>
+                    </div>
+                </div>
+                <div id={'影片文件素材列表'} className={classNames.srcListLine}>
+                    <div className={classNames.srcListLineContent}>
+                        {
+                            moviesSources.map((item,index)=>
+                            {
+                                return <div key={index} id={'一个素材'} className={classNames.srcElem}
+                                            onClick={()=>{onClickMovieSourceBtn(item,index)}}
+                                >
+                                    {item.name}
+                                </div>
+                            })
+                        }
+
                     </div>
                 </div>
             </div>

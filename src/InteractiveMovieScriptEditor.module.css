@@ -27,7 +27,9 @@
     justify-content: space-around;
     align-items: center;
     width: 95%;
-    border: 1px solid red;
+    /*border: 1px solid red;*/
+    border-radius: 10px;
+    box-shadow: 0 0 3px 5px #e7e3e3;
 }
 .timeSlider
 {
@@ -47,4 +49,39 @@
     flex-direction: row;
     justify-content: space-around;
     align-items: center;
+}
+
+.srcListLine
+{
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    top: 0px;
+    left: 0;
+    position: absolute;
+}
+.srcListLineContent
+{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: center;
+    width: 100%;
+    /*border: 1px solid red;*/
+    /*border-radius: 10px;*/
+    box-shadow: 0 0 3px 5px #e7e3e3;
+    background-color: gray;
+    opacity: 50%;
+    padding: 10px;
+}
+.srcElem
+{
+    width: 160px;
+    height: 90px;
+    border-radius: 10px;
+    box-shadow: 0 0 3px 3px #e6eff1;
+    margin-left: 10px;
+    margin-right: 10px;
 }
