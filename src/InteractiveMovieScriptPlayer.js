@@ -131,10 +131,11 @@ class InteractiveMovieScriptPlayer extends Component {
     let anchor = this.scriptProcessor.getAnchors(this.state.currentMovieId,this.state.lastPausePos, t);
     if (anchor)
     {
-      this.currentAnchor= anchor;
+      // this.currentAnchor= anchor;
       console.log('获取到了anchor', anchor);
-      this.player.pause();
-      this.player.seek(anchor.end);
+      // this.player.pause();
+      // this.player.seek(anchor.end);
+      this.player.seek(anchor.start);
     }
   }
   //endregion
