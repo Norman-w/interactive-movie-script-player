@@ -41,12 +41,12 @@ class InteractiveMovieScriptEditor extends Component {
             initScript: {
                 movies: {
                     mid1: {
-                        url: 'https://www.enni.group/file/testmovie/2.MP4',
+                        movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
                         posterUrl: 'https://www.enni.group/file/test2.png',
                     },
                     mid2:
                         {
-                            url: 'https://www.enni.group/file/testmovie/3.MP4',
+                          movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
                             posterUrl: 'https://www.enni.group/file/test1.png',
                         }
                 },
@@ -57,12 +57,12 @@ class InteractiveMovieScriptEditor extends Component {
                 {
                     movies: {
                         mobileMovie1: {
-                            url: 'https://www.enni.group/file/testmovie/2.MP4',
+                          movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
                             posterUrl: 'https://www.enni.group/file/test2.png',
                         },
                         mobileMovie2:
                             {
-                                url: 'https://www.enni.group/file/testmovie/3.MP4',
+                              movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
                                 posterUrl: 'https://www.enni.group/file/test1.png',
                             }
                     },
@@ -97,23 +97,23 @@ class InteractiveMovieScriptEditor extends Component {
       // let ret = jc.Compare(state, prevState);
         // console.log(ret);
       //视频的初始加载
-        if (!this.initMovieState && state.duration)
-        {
-            this.initMovieState = state;
-            this.setState({timeSliderRange:state.duration});
-            console.log('加载完了视频,设置时间为:',state.duration);
-        }
-        else
-        {
-          return;
-            // console.log(state);
-            //currentTime: 1.950439
-            //如果正在拖动,不更新进度条,如果是正在暂停状态 也不更新进度条.因为暂停的时候 并不会因为状态变更而触发进度条.
-          //暂停的时候不更新进度条 解决了用户拖动以后 这个函数被调用 然后又重新设置了进度条 而重新设置进度条和拖动的不一致的问题
-            if(!this.timeSliderSeeking && !this.state.playerPlaying) {
-                this.setState({timeSliderValue: state.currentTime});
-            }
-        }
+      //   if (!this.initMovieState && state.duration)
+      //   {
+      //       this.initMovieState = state;
+      //       this.setState({timeSliderRange:state.duration});
+      //       console.log('加载完了视频,设置时间为:',state.duration);
+      //   }
+      //   else
+      //   {
+      //     return;
+      //       // console.log(state);
+      //       //currentTime: 1.950439
+      //       //如果正在拖动,不更新进度条,如果是正在暂停状态 也不更新进度条.因为暂停的时候 并不会因为状态变更而触发进度条.
+      //     //暂停的时候不更新进度条 解决了用户拖动以后 这个函数被调用 然后又重新设置了进度条 而重新设置进度条和拖动的不一致的问题
+      //       if(!this.timeSliderSeeking && !this.state.playerPlaying) {
+      //           this.setState({timeSliderValue: state.currentTime});
+      //       }
+      //   }
     }
     //endregion
     //region 当时间轴发生变化的时候
@@ -204,8 +204,7 @@ class InteractiveMovieScriptEditor extends Component {
         }
         let mf = new MovieScriptFactory();
         console.log(this.initMovieState);
-        let movie = mf.CreateMovie(null,'设置视频1', '这是速配的第一次测试使用视频做设置向导', this.initMovieState.duration,null,this.initMovieState.src,'mp4');
-        let node = mf.CreateAnchorInformation4Video(movie,'设置发货人手机', '请设置您用于打印在快递面单上的发货人手机号码', null,null,0,currentNode,currentNode,'setMobile');
+        let node = mf.CreateAnchorInformation4Video(this.state.currentMovie,'设置发货人手机', '请设置您用于打印在快递面单上的发货人手机号码', null,null,0,currentNode,currentNode,'setMobile');
         this.state.scripts.setMobileScript.anchors[node.id]=(node);
         console.log('现在 节点内容有:', this.state.scripts);
         //endregion
@@ -254,17 +253,17 @@ class InteractiveMovieScriptEditor extends Component {
         console.log('you are clicked button in html', e.target.innerText)
         MySwal.clickConfirm();
     }
+    viewPlayer = null;
     onClickPreViewBtn()
     {
+      if(!this.viewPlayer)
+      {
+        this.viewPlayer = <InteractiveMovieScriptPlayer scripts={this.state.scripts}/>;
+      }
         MySwal.fire({
             title: <p>Hello World</p>,
             html:
-                <>
-                    {/*<Button onClick={this.onClickInnerBtn.bind(this)} type={'primary'}>按钮1文字</Button>*/}
-                    {/*<Button onClick={this.onClickInnerBtn.bind(this)} type={'primary'}>按钮3文字</Button>*/}
-                    <InteractiveMovieScriptPlayer scrpits={this.state.scripts}/>
-                </>
-            ,
+            this.viewPlayer,
             // footer: 'Copyright 2018',
             showConfirmButton : false,
 
@@ -284,23 +283,48 @@ class InteractiveMovieScriptEditor extends Component {
     onClickAddMovieSourceBtn()
     {
         this.player.load();
-        // let movieUrl = 'https://www.enni.group/file/testmovie/2.MP4';
-        // let moviePoster = 'https://www.enni.group/file/test2.png';
-        // let mf = new MovieScriptFactory();
-        // // console.log(this.initMovieState);
-        // let movie = mf.CreateMovie('initMovieSet1','设置视频1', '这是速配的第一次测试使用视频做设置向导', this.initMovieState.duration,null,this.initMovieState.src,'mp4');
-        // let movies = this.state.moviesSources;
-        // movies.push(movie);
-        // this.setState({moviesSources:movies});
-        // console.log('添加完了视频是:',movies);
+        let movieUrl = 'https://www.enni.group/file/testmovie/'+(this.state.moviesSources.length+2)+'.MP4';
+        let moviePoster = '';//'https://www.enni.group/file/test2.png';
+        let mf = new MovieScriptFactory();
+        // console.log(this.initMovieState);
+        let movie = mf.CreateMovie('initMovieSet'+(this.state.moviesSources.length+1),
+          '视频素材'+(this.state.moviesSources.length+1),
+          '这是速配的第一次测试使用视频做设置向导', 0,null,movieUrl,moviePoster,'mp4');
+
+        let movies = this.state.moviesSources;
+        movies.push(movie);
+        this.setState({moviesSources:movies,currentMovie:movie});
+        console.log('添加完了视频是:',movies);
+        this.player.load();
     }
     //endregion
     //region 点击视频素材
     onClickMovieSourceBtn(item,index)
     {
         this.setState({currentMovie:item});
+        this.player.load();
     }
     //endregion
+  //region 播放器视频加载
+  onPlayerLoadStart(e)
+  {
+
+  }
+  //endregion
+  //region 播放器加载完了视频的meta信息
+  onPlayerLoadedMetadata(e)
+  {
+    console.log('加载完了视频的基本信息:',e.target)
+    let url = e.target.currentSrc;
+    let duration = e.target.duration;
+    let m = this.state.currentMovie;
+    if(url === this.state.currentMovie.movieUrl) {
+      m.duration = duration;
+    }
+    this.setState({currentMovie:m,timeSliderRange:duration});
+    //console.log('设置完了当前电影的duration以后 movies变了吗? 变了,所以可以说明 movies中的movie是引用', this.state.moviesSources);
+  }
+  //endregion
     render() {
         let movieUrl = this.state.currentMovie.movieUrl;
         let posterUrl = this.state.currentMovie.posterUrl;
@@ -316,6 +340,8 @@ class InteractiveMovieScriptEditor extends Component {
         let moviesSources= this.state.moviesSources;
         let onClickAddMovieSourceBtn = this.onClickAddMovieSourceBtn.bind(this);
         let onClickMovieSourceBtn = this.onClickMovieSourceBtn.bind(this);
+        let onPlayerLoadStart = this.onPlayerLoadStart.bind(this);
+        let onPlayerLoadedMetadata = this.onPlayerLoadedMetadata.bind(this);
         let tipFormatter = (value)=>
         {
             let sec = value/1000;
@@ -330,13 +356,17 @@ class InteractiveMovieScriptEditor extends Component {
                         this.player = c;
                     }}
                     poster={posterUrl}
-                    // autoPlay
+                    autoPlay
                     src={movieUrl}
                     onPause={this.onPlayerPause.bind(this)}
                     onPlay={this.onPlayerPlay.bind(this)}
                     onTimeUpdate={(e)=>{
                       // console.log('时间更新',e,e.timeStamp);
                       onPlayerTimeUpdate(e)}}
+                    // onLoadStart={onPlayerLoadStart}
+                  // onLoadStart={e=>{console.log('onLoadStart:',e.target.duration)}}
+                  //   onLoadedMetadata={e=>{console.log('onLoadedMetadata:',e.target.duration)}}
+                    onLoadedMetadata={onPlayerLoadedMetadata}
                 >
                     <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
                     </ControlBar>
@@ -377,7 +407,12 @@ class InteractiveMovieScriptEditor extends Component {
                         {
                             moviesSources.map((item,index)=>
                             {
-                                return <div key={index} id={'一个素材'} className={classNames.srcElem}
+                              let srcClass = classNames.srcElem;
+                              if (item.id===this.state.currentMovie.id)
+                              {
+                                srcClass = classNames.srcElemCurrent;
+                              }
+                                return <div key={index} id={'一个素材'} className={srcClass}
                                             onClick={()=>{onClickMovieSourceBtn(item,index)}}
                                 >
                                     {item.name}

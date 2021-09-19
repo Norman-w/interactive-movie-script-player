@@ -63,55 +63,55 @@ class InteractiveMovieScriptPlayer extends Component {
   state =
     {
       currentMovie: {},
+      currentMovieId:'',
+      lastPausePos:0,
     }
     scriptProcessor = null;
   scripts={};
+  currentAnchor=null;
   //endregion
 
   //region  构造函数
   constructor(props) {
     super(props);
+    console.log('当前InteractiveMovieScriptPlayer的构造函数给入的参数是:', this.props);
     this.scripts = this.props.scripts;
-    let keys = Object.keys(this.scripts);
+    let keys = Object.keys(this.props.scripts);
     let movies = {};
     let anchors = {};
     for (let i = 0; i < keys.length; i++) {
       let key = keys[i];
       let script = this.scripts[key];
-      if (script&&script.movies)
-      {
-        for (let j = 0; j < script.movies.length; j++) {
-          let movie = script.movies[j];
-          if (movies[movie.id])
-          {
-
-          }
-          else
-          {
-            movies[movie.id] = movie;
-          }
-        }
+      console.log('当前脚本:', script);
+      if (script && script.movies) {
+        let a = movies;
+        movies = {...a, ...script.movies};
       }
-      if (script&& script.anchors)
-      {
-        for (let j = 0; j < script.anchors.length; j++) {
-          let anchor = script.anchors[j];
-          if (anchors[anchor.id])
-          {
+      if (script && script.anchors) {
 
-          }
-          else
-          {
-            anchors[anchor.id] = anchor;
-          }
-        }
+        let a = anchors;
+        anchors = {...a, ...script.anchors};
       }
+      this.scriptProcessor = new ScriptProcessor(movies, anchors);
     }
-    this.scriptProcessor = new ScriptProcessor(movies,anchors);
-    if (movies)
-    {
-      this.state.currentMovie = movies[keys[0]];
+    if (movies) {
+      let movieKeys = Object.keys(movies);
+      this.state.currentMovie = movies[movieKeys[0]];
+      this.state.currentMovieId = movieKeys[0];
     }
+    // console.log('InteractiveMovieScriptPlayer构造函数完成,movies:', movies, 'scripts:', this.scripts);
+    console.log('当前的movie', this.state.currentMovie)
+  }
+  jsonField2Array(jsonObj)
+  {
+    let ret = [];
+    let keys = Object.keys(jsonObj);
+    for (let i = 0; i < keys.length; i++) {
+      let key = keys[i];
+      let field = jsonObj[key];
+      ret.push(field);
+    }
+    return ret;
   }
 
   componentDidMount() {
@@ -121,14 +121,46 @@ class InteractiveMovieScriptPlayer extends Component {
   //region 当播放器时间变更
   onPlayerTimeUpdate(e)
   {
+    if (this.currentAnchor)
+    {
+      console.log('获取到了锚点,你是在获取到了锚点以后没有没有及时停止导致的播放器时间又更新了,你等 等一会的', this.currentAnchor);
+      return;
+    }
+    // console.log('时间更新',e.target.currentTime, this.state.currentMovie);
     let t = e.target.currentTime;
-    this.scriptProcessor.getAnchors(this.state.currentMovie.id,0, t);
+    let anchor = this.scriptProcessor.getAnchors(this.state.currentMovieId,this.state.lastPausePos, t);
+    if (anchor)
+    {
+      this.currentAnchor= anchor;
+      console.log('获取到了anchor', anchor);
+      this.player.pause();
+      this.player.seek(anchor.end);
+    }
+  }
+  //endregion
+  //region 暂停
+  onPause(e)
+  {
+    this.setState({lastPausePos: e.target.currentTime}
+    ,e=>{
+        console.log('上次停止时间:', this.state.lastPausePos)
+      }
+    );
+  }
+  //endregion
+  //region 开始播放
+  onPlay(e)
+  {
+    console.log('视频开始播放了:', e);
   }
   //endregion
   //region 渲染
   render() {
-    let onClickStartBtn = ()=>{this.player.play()};
+    let onClickStartBtn = ()=>{this.player.play();
+    // console.log('播放了视频')
+    };
     let masked=false;
+    // console.log('渲染播放器,url是:',this.state.currentMovie);
     return (
       <div className={classNames.main}>
         <div className={masked ? classNames.playerMasked : classNames.player}>
@@ -136,10 +168,12 @@ class InteractiveMovieScriptPlayer extends Component {
             ref={c => {
               this.player = c;
             }}
-            poster={this.state.currentMovie.url}
+            poster={this.state.currentMovie.posterUrl}
             autoPlay
-            src={this.state.currentMovie.posterUrl}
+            src={this.state.currentMovie.movieUrl}
             onTimeUpdate={this.onPlayerTimeUpdate.bind(this)}
+            onPause={this.onPause.bind(this)}
+            onPlay={this.onPlay.bind(this)}
           >
             <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
             </ControlBar>
@@ -150,7 +184,6 @@ class InteractiveMovieScriptPlayer extends Component {
              onClick={onClickStartBtn}
           // onMouseUp={onClickStartBtn}
         >
-
           <div className={classNames.closeBtn}>X</div>
         </div>
       </div>

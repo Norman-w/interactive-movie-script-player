@@ -1,7 +1,7 @@
 export default class MovieScriptFactory {
   //region 创建视频结构体信息
   CreateMovie(
-      id,name,desc,duration,usedFor,url,extType
+      id,name,desc,duration,usedFor,url,poster,extType
       // param= {id:'',name:'',desc:'',duration:10.5,usedFor:'',url:'',extType:''}
   )
   {
@@ -11,7 +11,8 @@ export default class MovieScriptFactory {
           desc:desc,
           duration:duration,
           usedFor:usedFor,
-          url:url,
+          movieUrl:url,
+        posterUrl:poster,
           extType:extType
       };
       if(!id)
