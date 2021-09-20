@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Slider, Button, Switch, Steps} from 'antd';
+import {Slider, Button, Switch, Steps, Modal, message} from 'antd';
 import classNames from './InteractiveMovieScriptEditor.module.css';
 import 'antd/dist/antd.css'
 //region  video-react的引用
@@ -21,6 +21,8 @@ import MovieScriptFactory from './movieScriptFactory' ;
 import JsonComparer from "./jsonComparer";
 import InteractiveMovieScriptPlayer from "./InteractiveMovieScriptPlayer";
 import Splitter from "./Splitter";
+import ScriptEditor from "./ScriptEditor";
+import SnippetEditor from "./SnippetEditor";
 
 
 const {Step} = Steps;
@@ -35,6 +37,7 @@ class InteractiveMovieScriptEditor extends Component {
         timeSliderMarks: {0: '开始'},
         timeSliderRangeValue: [0, 50],
         currentSelectRange: [0, 50],
+        currentSelectScriptId:'',
         authPlayWhenSlid: false,
         playerPlaying: false,
         currentSelectedNode: 0,
@@ -53,6 +56,7 @@ class InteractiveMovieScriptEditor extends Component {
                         }
                 },
                 anchors: {},
+                snippets:{},
             },
             //设置电话的脚本
             setMobileScript:
@@ -69,6 +73,7 @@ class InteractiveMovieScriptEditor extends Component {
                             }
                     },
                     anchors: {},
+                    snippets:{},
                 }
         },
         //已经添加到当前编辑器中的视频素材列表
@@ -340,6 +345,42 @@ class InteractiveMovieScriptEditor extends Component {
         }
         console.log('离当前选择的点最近的后面的点是:',moreThanThisNodeMinNode);
 
+        //region 弹窗展示脚本相关信息页面
+
+        let newScript = {};
+        let editor = <ScriptEditor mode={'create'} script={newScript}/>;
+        let that = this;
+        let m = Modal.info(
+            {
+                icon:null,
+                content:editor,
+                closable:true,
+                // centered:true,
+                onOk:(e)=>
+                {
+                    console.log(newScript);
+                    if (!newScript.id || !newScript.name) {
+                        message.warn('输入无效');
+                    }
+                    else if(that.state.scripts[newScript.id])
+                    {
+                        message.error('脚本'+ newScript.id + '已存在');
+                    }
+                    else
+                    {
+                        let s = that.state.scripts;
+                        s[newScript.id] = {name:newScript.name, snippets:{} };
+                        that.setState({scripts:s, currentSelectScriptId:newScript.id});
+                        message.success('添加脚本 '+ newScript.id + '成功');
+                        console.log(that.state.scripts);
+                        m.destroy();
+                    }
+                }
+            }
+        )
+        //endregion
+
+        return;
         //region 生成和添加到scriptAnchors中
         if (!this.scriptAnchors) {
             this.scriptAnchors = [];
@@ -356,6 +397,53 @@ class InteractiveMovieScriptEditor extends Component {
         this.state.scripts.setMobileScript.anchors[node.id] = (node);
         console.log('现在 节点内容有:', this.state.scripts);
         //endregion
+    }
+    //endregion
+    //region 点击脚本的时候切换脚本
+    onClickScript(key)
+    {
+        this.setState({currentSelectScriptId:key});
+    }
+    //endregion
+    //region 在选择的脚本中添加片段信息
+    onClickAddSnippet(scriptId)
+    {
+        let that = this;
+        let newSnippet = {};
+        let content = <SnippetEditor mode={'create'} snippet={newSnippet}/>;
+        let md = Modal.info(
+            {
+                width:400,
+                icon:null,
+                content:content,
+                closable:true,
+                onOk:(e)=>
+                {
+                    if (!newSnippet.type)
+                    {
+                        message.warn('请选择片段类型');
+                    }
+                    else if (!newSnippet.id || !newSnippet.name)
+                    {
+                        message.warn('请正确输入id和名称');
+                    }
+                    else if(that.state.scripts[scriptId].snippets[newSnippet.id])
+                    {
+                        message.warn('片段id:'+newSnippet.id +'已存在');
+                    }
+                    else {
+                        let sc = that.state.scripts;
+                        let thisSc = sc[scriptId];
+                        thisSc.snippets[newSnippet.id] = {name:newSnippet.name, type:newSnippet.type};
+                        that.setState({scripts:sc},()=>{
+                            message.success('添加片段'+newSnippet.id+'成功')
+                            md.destroy();
+                            console.log('当前脚本内容:',scriptId, that.state.scripts)
+                        });
+                    }
+                }
+            }
+        )
     }
     //endregion
     render() {
@@ -376,6 +464,9 @@ class InteractiveMovieScriptEditor extends Component {
         let onClickMovieSourceBtn = this.onClickMovieSourceBtn.bind(this);
         let onPlayerLoadStart = this.onPlayerLoadStart.bind(this);
         let onPlayerLoadedMetadata = this.onPlayerLoadedMetadata.bind(this);
+        let onClickScript = this.onClickScript.bind(this);
+        const scripts = this.state.scripts;
+        let currentSelectScriptId = this.state.currentSelectScriptId;
         let tipFormatter = (value) => {
             let sec = value / 1000;
             // let mil = value%1000;
@@ -384,92 +475,162 @@ class InteractiveMovieScriptEditor extends Component {
         }
         return (
             <div className={classNames.main}>
-                <Player
-                    ref={c => {
-                        this.player = c;
-                    }}
-                    poster={posterUrl}
-                    autoPlay
-                    src={movieUrl}
-                    onPause={this.onPlayerPause.bind(this)}
-                    onPlay={this.onPlayerPlay.bind(this)}
-                    onTimeUpdate={(e) => {
-                        // console.log('时间更新',e,e.timeStamp);
-                        onPlayerTimeUpdate(e)
-                    }}
-                    // onLoadStart={onPlayerLoadStart}
-                    // onLoadStart={e=>{console.log('onLoadStart:',e.target.duration)}}
-                    //   onLoadedMetadata={e=>{console.log('onLoadedMetadata:',e.target.duration)}}
-                    onLoadedMetadata={onPlayerLoadedMetadata}
-                >
-                    <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
-                    </ControlBar>
-                    <BigPlayButton position={'hide'}/>
-                </Player>
-                <div id={'下方时间轴和按钮'} className={classNames.editorBottomLine}>
-                    <div id={'编辑器内部'} className={classNames.editorContent}>
-                        <div id={'按钮集'} className={classNames.buttons}>
-                            <Button onClick={onClickAddMovieSourceBtn}>添加视频</Button>
-                            <div className={classNames.lineFlexRow}>
-                                <div>拖拽后自动播放</div>
-                                <Switch checked={this.state.authPlayWhenSlid} defaultChecked size={'small'}
-                                        onChange={onAutoPlayChange}/></div>
-                            <Button onClick={onClickAddAnchorBtn}>添加节点</Button>
-                            <Button onClick={onClickAddScriptBtn}>添加脚本</Button>
-                            <Button onClick={onClickRemoveAnchorBtn}>删除节点</Button>
-                            <Button onClick={onClickPreViewBtn}>预览</Button>
-                        </div>
-                        <div id={'时间轴'} className={classNames.timeSlider}>
-                            <Slider
-                                step={0.001}
-                                value={this.state.timeSliderValue}
-                                onChange={this.onTimeSliderChange.bind(this)}
-                                onAfterChange={this.onTimeSliderAfterChange.bind(this)}
-                                max={duration}
-                            />
-                        </div>
-                        <div id={'已选择节点的时间轴'} className={classNames.timeSlider}>
-                            <Slider
-                                step={1}
-                                onChange={e=>{
-                                    // console.log('当前选中的节点是', e)
-                                    if (this.state.timeSliderMarks[e])
-                                    {
-                                        console.log('选中的节点是mark:', e);
-                                        this.setState({currentSelectedNode:e});
+                <div className={classNames.playerContent}>
+                    <Player
+                        ref={c => {
+                            this.player = c;
+                        }}
+                        poster={posterUrl}
+                        autoPlay
+                        src={movieUrl}
+                        onPause={this.onPlayerPause.bind(this)}
+                        onPlay={this.onPlayerPlay.bind(this)}
+                        onTimeUpdate={(e) => {
+                            onPlayerTimeUpdate(e)
+                        }}
+
+                        onLoadedMetadata={onPlayerLoadedMetadata}
+                        className={classNames.main}
+                    >
+                        <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
+                        </ControlBar>
+                        <BigPlayButton position={'hide'}/>
+                    </Player>
+                </div>
+                <div id={'覆盖层各种工具栏'} className={classNames.toolsLayout}>
+                    <div id={'影片文件素材列表'} className={classNames.leftColumn}>
+                        <div className={classNames.srcListLineContent}>
+                            {
+                                moviesSources.map((item, index) => {
+                                    let srcClass = classNames.srcElem;
+                                    if (item.id === this.state.currentMovie.id) {
+                                        srcClass = classNames.srcElemCurrent;
                                     }
-                                }}
-                                onAfterChange={onTimeNodeSliderAfterChange}
-                                max={duration}
-                                marks={sliderMarks}
-                                included={false}
-                            />
-                        </div>
-                        <div id={'自己写的时间节点编辑器'} className={classNames.timeSlider}>
-                            <Splitter></Splitter>
+                                    return <div key={index} id={'一个素材'} className={srcClass}
+                                                onClick={() => {
+                                                    onClickMovieSourceBtn(item, index)
+                                                }}
+                                    >
+                                        {item.name}
+                                    </div>
+                                })
+                            }
+
                         </div>
                     </div>
-                </div>
-                <div id={'影片文件素材列表'} className={classNames.srcListLine}>
-                    <div className={classNames.srcListLineContent}>
-                        {
-                            moviesSources.map((item, index) => {
-                                let srcClass = classNames.srcElem;
-                                if (item.id === this.state.currentMovie.id) {
-                                    srcClass = classNames.srcElemCurrent;
-                                }
-                                return <div key={index} id={'一个素材'} className={srcClass}
-                                            onClick={() => {
-                                                onClickMovieSourceBtn(item, index)
-                                            }}
-                                >
-                                    {item.name}
+                    <div id={'中间的工具栏'} className={classNames.midColumn}>
+                        <div id={'上方信息栏'} className={classNames.infoLine}>
+                            <div>
+                                当前视频:{this.state.currentMovie.id}
+                            </div>
+                            <div>
+                                当前节点:{this.state.currentSelectedNode}
+                            </div>
+                            <div>
+                                当前区域:{this.state.currentSelectRange}
+                            </div>
+                            <div>
+                                当前脚本:{currentSelectScriptId}
+                            </div>
+                        </div>
+                        <div id={'下方时间轴和按钮'} className={classNames.editorBottomLineContent}>
+                            <div id={'编辑器内部'} className={classNames.editorContent}>
+                                <div id={'按钮集'} className={classNames.buttons}>
+                                    <Button onClick={onClickAddMovieSourceBtn}>添加视频</Button>
+                                    <div className={classNames.lineFlexRow}>
+                                        <div>拖拽后自动播放</div>
+                                        <Switch checked={this.state.authPlayWhenSlid} defaultChecked size={'small'}
+                                                onChange={onAutoPlayChange}/></div>
+                                    <Button onClick={onClickAddAnchorBtn}>添加节点</Button>
+                                    <Button onClick={onClickAddScriptBtn}>添加脚本</Button>
+                                    <Button onClick={onClickRemoveAnchorBtn}>删除节点</Button>
+                                    <Button onClick={onClickPreViewBtn}>预览</Button>
                                 </div>
-                            })
-                        }
+                                <div id={'时间轴'} className={classNames.timeSlider}>
+                                    <Slider
+                                        step={0.001}
+                                        value={this.state.timeSliderValue}
+                                        onChange={this.onTimeSliderChange.bind(this)}
+                                        onAfterChange={this.onTimeSliderAfterChange.bind(this)}
+                                        max={duration}
+                                    />
+                                </div>
+                                <div id={'已选择节点的时间轴'} className={classNames.timeSlider}>
+                                    <Slider
+                                        step={1}
+                                        onChange={e=>{
+                                            // console.log('当前选中的节点是', e)
+                                            if (this.state.timeSliderMarks[e])
+                                            {
+                                                console.log('选中的节点是mark:', e);
+                                                this.setState({currentSelectedNode:e});
+                                            }
+                                        }}
+                                        onAfterChange={onTimeNodeSliderAfterChange}
+                                        max={duration}
+                                        marks={sliderMarks}
+                                        included={false}
+                                    />
+                                </div>
+                                <div id={'自己写的时间节点编辑器'} className={classNames.timeSlider}>
+                                    <Splitter></Splitter>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id={'右侧的工具栏'} className={classNames.rightColumn}>
+                        <div id={'脚本列表集合'} className={classNames.scriptListContent}>
+                            {
+                                Object.keys(scripts).map(
+                                    (key,index)=>
+                                    {
+                                        let obj = scripts[key];
+                                        let scriptClass = classNames.script;
+                                        let addSnippetBtn = null;
+                                        if (currentSelectScriptId===key)
+                                        {
+                                            scriptClass = classNames.scriptCurrent;
+                                            addSnippetBtn = <div className={classNames.addSnippetBtn}
+                                                                 onClick={()=>{
+                                                                     this.onClickAddSnippet(key);
+                                                                 }}
+                                            >+</div>
+                                        }
+                                        return <div key={key} className={scriptClass}
+                                                    onClick={()=>{onClickScript(key)}}
+                                        >
+                                            <div className={classNames.scriptTitle}>{key}</div>
+                                            <div className={classNames.scriptSubTitle}>{obj.name}</div>
+                                            <div className={classNames.snippetListContent}>
+                                                {/*<div className={classNames.snippet}></div>*/}
+                                                {
+                                                    Object.keys(obj.snippets).map((sKey, sIndex) => {
+                                                        return <div key={sKey} className={classNames.snippet}>
+                                                            <div className={classNames.snippetTitle}>
+                                                                {obj.snippets[sKey].name}
+                                                            </div>
+                                                            <div className={classNames.snippetSubTitle}>
+                                                                {obj.snippets[sKey].type}
+                                                            </div>
+                                                        </div>
+                                                    })
+                                                }
+                                                {addSnippetBtn}
+                                            </div>
+                                        </div>
+                                    }
+                                )
+                            }
+
+                            <div id={'添加脚本按钮'} className={this.state.addScriptHover? classNames.scriptAddBtnHover: classNames.scriptAddBtn} onClick={onClickAddScriptBtn}
+                                 onMouseEnter={()=>{this.setState({addScriptHover:true})}}
+                                 onMouseLeave={()=>{this.setState({addScriptHover:false})}}
+                            >+</div>
+                        </div>
 
                     </div>
                 </div>
+
             </div>
         );
     }
