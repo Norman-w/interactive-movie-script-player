@@ -42,39 +42,39 @@ class InteractiveMovieScriptEditor extends Component {
         playerPlaying: false,
         currentSelectedNode: 0,
         scripts: {
-            //初始的脚本
-            initScript: {
-                movies: {
-                    mid1: {
-                        movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
-                        posterUrl: 'https://www.enni.group/file/test2.png',
-                    },
-                    mid2:
-                        {
-                            movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
-                            posterUrl: 'https://www.enni.group/file/test1.png',
-                        }
-                },
-                anchors: {},
-                snippets:{},
-            },
-            //设置电话的脚本
-            setMobileScript:
-                {
-                    movies: {
-                        mobileMovie1: {
-                            movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
-                            posterUrl: 'https://www.enni.group/file/test2.png',
-                        },
-                        mobileMovie2:
-                            {
-                                movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
-                                posterUrl: 'https://www.enni.group/file/test1.png',
-                            }
-                    },
-                    anchors: {},
-                    snippets:{},
-                }
+            // //初始的脚本
+            // initScript: {
+            //     movies: {
+            //         mid1: {
+            //             movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
+            //             posterUrl: 'https://www.enni.group/file/test2.png',
+            //         },
+            //         mid2:
+            //             {
+            //                 movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
+            //                 posterUrl: 'https://www.enni.group/file/test1.png',
+            //             }
+            //     },
+            //     anchors: {},
+            //     snippets:{},
+            // },
+            // //设置电话的脚本
+            // setMobileScript:
+            //     {
+            //         movies: {
+            //             mobileMovie1: {
+            //                 movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
+            //                 posterUrl: 'https://www.enni.group/file/test2.png',
+            //             },
+            //             mobileMovie2:
+            //                 {
+            //                     movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
+            //                     posterUrl: 'https://www.enni.group/file/test1.png',
+            //                 }
+            //         },
+            //         anchors: {},
+            //         snippets:{},
+            //     }
         },
         //已经添加到当前编辑器中的视频素材列表
         moviesSources: [],
@@ -92,6 +92,26 @@ class InteractiveMovieScriptEditor extends Component {
         if (this.player) {
             this.player.subscribeToStateChange(this.handleStateChange.bind(this));
         }
+        this.load();
+    }
+    save()
+    {
+      localStorage.setItem('movies',JSON.stringify(this.state.moviesSources));
+      localStorage.setItem('scripts',JSON.stringify(this.state.scripts));
+    }
+    load()
+    {
+      //region 读取本地数据
+      let moviesJson = localStorage.getItem('movies');
+      if (moviesJson) {
+        this.setState({moviesSources: JSON.parse(moviesJson)});
+      }
+      let scriptsJson = localStorage.getItem('scripts');
+      if (scriptsJson)
+      {
+        this.setState({scripts:JSON.parse(scriptsJson)});
+      }
+      //endregion
     }
 
     //endregion
@@ -294,6 +314,7 @@ class InteractiveMovieScriptEditor extends Component {
         movies.push(movie);
         this.setState({moviesSources: movies, currentMovie: movie});
         console.log('添加完了视频是:', movies);
+        this.save();
         this.player.load();
     }
 
@@ -328,23 +349,6 @@ class InteractiveMovieScriptEditor extends Component {
     //region 添加脚本 在当前选择的时间点
     onClickAddScriptBtn(e)
     {
-        //获取该节点到什么时间点结束
-        let ms = this.state.timeSliderMarks;
-        let mskeys = Object.keys(ms);
-        let currentSelectedNode = this.state.currentSelectedNode;
-        let moreThanThisNodeMinNode = this.state.currentMovie.duration;//大于当前选择的时间点的最近一个时间点是什么
-        for (let i = 0; i < mskeys.length; i++) {
-            let key = mskeys[i];
-            if (key>currentSelectedNode)
-            {
-                if(key<moreThanThisNodeMinNode)
-                {
-                    moreThanThisNodeMinNode = parseFloat(key);
-                }
-            }
-        }
-        console.log('离当前选择的点最近的后面的点是:',moreThanThisNodeMinNode);
-
         //region 弹窗展示脚本相关信息页面
 
         let newScript = {};
@@ -374,28 +378,11 @@ class InteractiveMovieScriptEditor extends Component {
                         message.success('添加脚本 '+ newScript.id + '成功');
                         console.log(that.state.scripts);
                         m.destroy();
+                        that.save()
                     }
                 }
             }
         )
-        //endregion
-
-        return;
-        //region 生成和添加到scriptAnchors中
-        if (!this.scriptAnchors) {
-            this.scriptAnchors = [];
-        }
-        let mf = new MovieScriptFactory();
-        let node = mf.CreateAnchorInformation4Video(this.state.currentMovie,
-            '设置发货人手机',
-            '请设置您用于打印在快递面单上的发货人手机号码',
-            null,
-            null,
-            currentSelectedNode,
-            moreThanThisNodeMinNode,
-            moreThanThisNodeMinNode-currentSelectedNode, 'setMobile');
-        this.state.scripts.setMobileScript.anchors[node.id] = (node);
-        console.log('现在 节点内容有:', this.state.scripts);
         //endregion
     }
     //endregion
@@ -408,42 +395,89 @@ class InteractiveMovieScriptEditor extends Component {
     //region 在选择的脚本中添加片段信息
     onClickAddSnippet(scriptId)
     {
-        let that = this;
-        let newSnippet = {};
-        let content = <SnippetEditor mode={'create'} snippet={newSnippet}/>;
-        let md = Modal.info(
+      //return 获取该节点到什么时间点结束
+      let ms = this.state.timeSliderMarks;
+      let mskeys = Object.keys(ms);
+      let currentSelectedNode = this.state.currentSelectedNode;
+      let moreThanThisNodeMinNode = this.state.currentMovie.duration;//大于当前选择的时间点的最近一个时间点是什么
+      for (let i = 0; i < mskeys.length; i++) {
+        let key = mskeys[i];
+        if (key>currentSelectedNode)
+        {
+          if(key<moreThanThisNodeMinNode)
+          {
+            moreThanThisNodeMinNode = parseFloat(key);
+          }
+        }
+      }
+      console.log('离当前选择的点和最近的后面的点是:',currentSelectedNode, moreThanThisNodeMinNode);
+      //endregion
+
+      if (currentSelectedNode===undefined || currentSelectedNode<0)
+      {
+        message.warn('请选择脚本起始点');
+        return;
+      }
+      else if(moreThanThisNodeMinNode===undefined || moreThanThisNodeMinNode<=0)
+      {
+        message.warn('无效的脚本结束时间');
+        return;
+      }
+
+      let that = this;
+        let newSnippet = {
+          startTime:currentSelectedNode,
+          endTime:moreThanThisNodeMinNode,
+          duration:moreThanThisNodeMinNode-currentSelectedNode,
+          redirect:false,
+          redirectSnippetId:null,
+        };
+        this.showSnippetEditor(scriptId,newSnippet);
+    }
+    showSnippetEditor(scriptId,newSnippet)
+    {
+      console.log('显示片段编辑器:', newSnippet);
+      let that = this;
+      let content = <SnippetEditor mode={'create'}
+                                   movie={this.state.currentMovie}
+                                   scriptId={this.state.currentSelectScriptId}
+                                   snippet={newSnippet}/>;
+      let md = Modal.info(
+        {
+          centered:true,
+          width:400,
+          icon:null,
+          content:content,
+          closable:true,
+          onOk:(e)=>
+          {
+            if (!newSnippet.type)
             {
-                width:400,
-                icon:null,
-                content:content,
-                closable:true,
-                onOk:(e)=>
-                {
-                    if (!newSnippet.type)
-                    {
-                        message.warn('请选择片段类型');
-                    }
-                    else if (!newSnippet.id || !newSnippet.name)
-                    {
-                        message.warn('请正确输入id和名称');
-                    }
-                    else if(that.state.scripts[scriptId].snippets[newSnippet.id])
-                    {
-                        message.warn('片段id:'+newSnippet.id +'已存在');
-                    }
-                    else {
-                        let sc = that.state.scripts;
-                        let thisSc = sc[scriptId];
-                        thisSc.snippets[newSnippet.id] = {name:newSnippet.name, type:newSnippet.type};
-                        that.setState({scripts:sc},()=>{
-                            message.success('添加片段'+newSnippet.id+'成功')
-                            md.destroy();
-                            console.log('当前脚本内容:',scriptId, that.state.scripts)
-                        });
-                    }
-                }
+              message.warn('请选择片段类型');
             }
-        )
+            else if (!newSnippet.id || !newSnippet.name)
+            {
+              message.warn('请正确输入id和名称');
+            }
+            else if(that.state.scripts[scriptId].snippets[newSnippet.id])
+            {
+              message.warn('片段id:'+newSnippet.id +'已存在');
+            }
+            else {
+              let sc = that.state.scripts;
+              let thisSc = sc[scriptId];
+              这里信息不全面
+              thisSc.snippets[newSnippet.id] = {name:newSnippet.name, type:newSnippet.type};
+              that.setState({scripts:sc},()=>{
+                message.success('添加片段'+newSnippet.id+'成功')
+                md.destroy();
+                console.log('当前脚本内容:',scriptId, that.state.scripts);
+                that.save();
+              });
+            }
+          }
+        }
+      )
     }
     //endregion
     render() {
@@ -497,7 +531,11 @@ class InteractiveMovieScriptEditor extends Component {
                         <BigPlayButton position={'hide'}/>
                     </Player>
                 </div>
-                <div id={'覆盖层各种工具栏'} className={classNames.toolsLayout}>
+                <div id={'覆盖层各种工具栏'} className={classNames.toolsLayout}
+                     // onClick={
+                     //   ()=>{this.player.play()}
+                     // }
+                >
                     <div id={'影片文件素材列表'} className={classNames.leftColumn}>
                         <div className={classNames.srcListLineContent}>
                             {
@@ -605,7 +643,12 @@ class InteractiveMovieScriptEditor extends Component {
                                                 {/*<div className={classNames.snippet}></div>*/}
                                                 {
                                                     Object.keys(obj.snippets).map((sKey, sIndex) => {
-                                                        return <div key={sKey} className={classNames.snippet}>
+                                                        return <div key={sKey} className={classNames.snippet}
+                                                                    onClick={
+                                                                      // ()=>this.setState({currentSelectedSnippet:obj.snippets[sKey]})
+                                                                      ()=>this.showSnippetEditor(key,obj.snippets[sKey])
+                                                                    }
+                                                        >
                                                             <div className={classNames.snippetTitle}>
                                                                 {obj.snippets[sKey].name}
                                                             </div>

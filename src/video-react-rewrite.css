@@ -1,4 +1,22 @@
+/*让大的那个还没开始播放时候的那个按钮不显示*/
 .video-react .video-react-big-play-button.video-react-big-play-button-hide
 {
     display: none;
+}
+/*.video-react-playing*/
+/*{*/
+/*  display: none;*/
+/*}*/
+
+/*.video-react .video-react-play-control*/
+/*{*/
+/*  display: none;*/
+/*}*/
+
+/*让播放和暂停按钮不显示,原来被定义在 video-react/styles/scss/components/menu/bezel.scss中*/
+.video-react-bezel-animation {
+   display: none;
+ }
+.video-react-bezel-animation-alt {
+display: none;
 }

@@ -5,3 +5,62 @@
     justify-content: center;
     align-items: center;
 }
+.info
+{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+.idNameLine
+{
+  composes: lineFlexRow;
+  margin-top: 10px;
+}
+.ownerInfo
+{
+  composes: lineFlexRow;
+  width: 100%;
+  justify-content: space-between;
+}
+.timeInfo
+{
+  composes: lineFlexRow;
+  width: 100%;
+  justify-content: space-between;
+}
+.transitionsList
+{
+  width: 100%;
+  /*border: 1px solid red;*/
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  flex-wrap: wrap;
+  /*overflow: auto;*/
+  /*white-space: nowrap;*/
+}
+.transition
+{
+  width: 80px;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  border: 1px dashed dodgerblue;
+  margin-right: 5px;
+  margin-left: 5px;
+  margin-bottom: 3px;
+  user-select: none;
+  cursor: pointer;
+}
+.transitionSelected
+{
+  composes: transition;
+  border: none;
+  /*border: 1px solid dodgerblue;*/
+  border-radius: 3px;
+  box-shadow: 0 0 3px 1px dodgerblue;
+}
