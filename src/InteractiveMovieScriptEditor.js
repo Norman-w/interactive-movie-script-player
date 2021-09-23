@@ -32,49 +32,14 @@ class InteractiveMovieScriptEditor extends Component {
     state = {
         currentMovie: {},
         currentMovieState: null,
-        timeSliderRange: 0,
         timeSliderValue: 0,
         timeSliderMarks: {0: '开始'},
-        timeSliderRangeValue: [0, 50],
-        currentSelectRange: [0, 50],
         currentSelectScriptId:'',
         authPlayWhenSlid: false,
         playerPlaying: false,
         currentSelectedNode: 0,
         scripts: {
-            // //初始的脚本
-            // initScript: {
-            //     movies: {
-            //         mid1: {
-            //             movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
-            //             posterUrl: 'https://www.enni.group/file/test2.png',
-            //         },
-            //         mid2:
-            //             {
-            //                 movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
-            //                 posterUrl: 'https://www.enni.group/file/test1.png',
-            //             }
-            //     },
-            //     anchors: {},
-            //     snippets:{},
-            // },
-            // //设置电话的脚本
-            // setMobileScript:
-            //     {
-            //         movies: {
-            //             mobileMovie1: {
-            //                 movieUrl: 'https://www.enni.group/file/testmovie/2.MP4',
-            //                 posterUrl: 'https://www.enni.group/file/test2.png',
-            //             },
-            //             mobileMovie2:
-            //                 {
-            //                     movieUrl: 'https://www.enni.group/file/testmovie/3.MP4',
-            //                     posterUrl: 'https://www.enni.group/file/test1.png',
-            //                 }
-            //         },
-            //         anchors: {},
-            //         snippets:{},
-            //     }
+
         },
         //已经添加到当前编辑器中的视频素材列表
         moviesSources: [],
@@ -118,28 +83,6 @@ class InteractiveMovieScriptEditor extends Component {
 
     //region 视频状态有变更 包括人的操作和视频主动发出来的时间变化之类的
     handleStateChange(state, prevState) {
-        // console.log(prevState);return;
-        // let jc = new JsonComparer();
-        // let ret = jc.Compare(state, prevState);
-        // console.log(ret);
-        //视频的初始加载
-        //   if (!this.initMovieState && state.duration)
-        //   {
-        //       this.initMovieState = state;
-        //       this.setState({timeSliderRange:state.duration});
-        //       console.log('加载完了视频,设置时间为:',state.duration);
-        //   }
-        //   else
-        //   {
-        //     return;
-        //       // console.log(state);
-        //       //currentTime: 1.950439
-        //       //如果正在拖动,不更新进度条,如果是正在暂停状态 也不更新进度条.因为暂停的时候 并不会因为状态变更而触发进度条.
-        //     //暂停的时候不更新进度条 解决了用户拖动以后 这个函数被调用 然后又重新设置了进度条 而重新设置进度条和拖动的不一致的问题
-        //       if(!this.timeSliderSeeking && !this.state.playerPlaying) {
-        //           this.setState({timeSliderValue: state.currentTime});
-        //       }
-        //   }
     }
 
     //endregion
@@ -183,7 +126,6 @@ class InteractiveMovieScriptEditor extends Component {
         this.timeSliderSeeking = true;
         this.player.seek(e);
         this.setState({timeSliderValue:e,currentSelectedNode:e});
-        // this.setState({timeSliderRangeValue: e, currentSelectedRange: e})
         if (this.state.timeSliderMarks[this.state.currentSelectedNode])
         {
             let marks = this.state.timeSliderMarks;
@@ -280,7 +222,7 @@ class InteractiveMovieScriptEditor extends Component {
             this.viewPlayer = <InteractiveMovieScriptPlayer scripts={this.state.scripts}/>;
         }
         MySwal.fire({
-            title: <p>Hello World</p>,
+            // title: <p>Hello World</p>,
             html:
             this.viewPlayer,
             // footer: 'Copyright 2018',
@@ -341,7 +283,7 @@ class InteractiveMovieScriptEditor extends Component {
         if (url === this.state.currentMovie.movieUrl) {
             m.duration = duration;
         }
-        this.setState({currentMovie: m, timeSliderRange: duration});
+        this.setState({currentMovie: m});
         //console.log('设置完了当前电影的duration以后 movies变了吗? 变了,所以可以说明 movies中的movie是引用', this.state.moviesSources);
     }
 
@@ -351,7 +293,7 @@ class InteractiveMovieScriptEditor extends Component {
     {
         //region 弹窗展示脚本相关信息页面
 
-        let newScript = {};
+        let newScript = {snippets:{}};
         let editor = <ScriptEditor mode={'create'} script={newScript}/>;
         let that = this;
         let m = Modal.info(
@@ -373,7 +315,7 @@ class InteractiveMovieScriptEditor extends Component {
                     else
                     {
                         let s = that.state.scripts;
-                        s[newScript.id] = {name:newScript.name, snippets:{} };
+                        s[newScript.id] = newScript;//{name:newScript.name, snippets:{} };
                         that.setState({scripts:s, currentSelectScriptId:newScript.id});
                         message.success('添加脚本 '+ newScript.id + '成功');
                         console.log(that.state.scripts);
@@ -395,6 +337,7 @@ class InteractiveMovieScriptEditor extends Component {
     //region 在选择的脚本中添加片段信息
     onClickAddSnippet(scriptId)
     {
+        console.log('在脚本集:',scriptId+'中添加片段')
       //return 获取该节点到什么时间点结束
       let ms = this.state.timeSliderMarks;
       let mskeys = Object.keys(ms);
@@ -413,6 +356,8 @@ class InteractiveMovieScriptEditor extends Component {
       console.log('离当前选择的点和最近的后面的点是:',currentSelectedNode, moreThanThisNodeMinNode);
       //endregion
 
+
+
       if (currentSelectedNode===undefined || currentSelectedNode<0)
       {
         message.warn('请选择脚本起始点');
@@ -426,22 +371,73 @@ class InteractiveMovieScriptEditor extends Component {
 
       let that = this;
         let newSnippet = {
+            movieId:this.state.currentMovie.id,
+            movieUrl:this.state.currentMovie.movieUrl,
           startTime:currentSelectedNode,
           endTime:moreThanThisNodeMinNode,
           duration:moreThanThisNodeMinNode-currentSelectedNode,
           redirect:false,
-          redirectSnippetId:null,
+          redirectSnippetIndex:null,
+            transitionSnippetIndex:null,
+            scriptId:scriptId,
         };
-        this.showSnippetEditor(scriptId,newSnippet);
+        this.showSnippetEditor(this.state.currentMovie.id, this.state.currentMovie.movieUrl, scriptId,newSnippet,'create');
     }
-    showSnippetEditor(scriptId,newSnippet)
+    showSnippetEditor(movieId,movieUrl, scriptId,newSnippet,mode)
     {
-      console.log('显示片段编辑器:', newSnippet);
+      // console.log('显示片段编辑器:', newSnippet);
+        //region 获取当前可用的过场视频集合
+        let transitionSnippets = [];
+        let allSnippets = [];
+        let scriptsKeys = Object.keys(this.state.scripts);
+        for (let i = 0; i < scriptsKeys.length; i++) {
+            let key = scriptsKeys[i];
+            let script = this.state.scripts[key];
+            let snippetsKeys = Object.keys(script.snippets)
+            for (let j in snippetsKeys)
+            {
+                let skk = snippetsKeys[j];
+                let snippet=script.snippets[skk];
+                if(snippet.type==='transitions')
+                {
+                    transitionSnippets.push(snippet);
+                }
+                allSnippets.push(snippet);
+            }
+        }
+        // console.log('可用过场集合', transitionSnippets, '可用所有片段:', allSnippets);
+        //endregion
       let that = this;
-      let content = <SnippetEditor mode={'create'}
-                                   movie={this.state.currentMovie}
-                                   scriptId={this.state.currentSelectScriptId}
-                                   snippet={newSnippet}/>;
+        let editorRef = null;
+      let content = <SnippetEditor mode={mode}
+                                   movieId={movieId}
+                                   movieUrl={movieUrl}
+                                   scriptId={scriptId}
+                                   snippet={newSnippet}
+                                   onDelete={()=>{
+                                       let sc = that.state.scripts;
+                                       let thisSc = sc[scriptId];
+                                       if(!thisSc.snippets)
+                                       {
+                                           thisSc.snippets = {};
+                                       }
+                                       delete thisSc.snippets[newSnippet.id];
+                                       that.setState({scripts:sc},()=>{
+                                           message.success('删除片段'+newSnippet.id+'成功')
+                                           md.destroy();
+                                           console.log('当前脚本内容:',scriptId, that.state.scripts);
+                                           that.save();
+                                       });
+                                       return;
+                                   }}
+                                   ref={e=>editorRef=e}
+                                   //可选的过场片段都有哪些
+                                   transitionSnippets={transitionSnippets}
+                                   //所有的片段都有哪些,这些片段可以用来执行跳转
+                                   allSnippets={allSnippets}
+      />;
+        // console.log('即将显示新片段的编辑页面', newSnippet);
+
       let md = Modal.info(
         {
           centered:true,
@@ -449,8 +445,14 @@ class InteractiveMovieScriptEditor extends Component {
           icon:null,
           content:content,
           closable:true,
+            okText:'保存',
           onOk:(e)=>
           {
+              if (!that.state.scripts[scriptId].snippets)
+              {
+                  that.state.scripts[scriptId].snippets = {};
+              }
+              console.log('片段编辑器的内容是:', newSnippet);
             if (!newSnippet.type)
             {
               message.warn('请选择片段类型');
@@ -459,17 +461,28 @@ class InteractiveMovieScriptEditor extends Component {
             {
               message.warn('请正确输入id和名称');
             }
-            else if(that.state.scripts[scriptId].snippets[newSnippet.id])
+            else if(mode==='craete' && that.state.scripts[scriptId].snippets[newSnippet.id])
             {
               message.warn('片段id:'+newSnippet.id +'已存在');
             }
             else {
+                console.log(editorRef);
               let sc = that.state.scripts;
               let thisSc = sc[scriptId];
-              这里信息不全面
-              thisSc.snippets[newSnippet.id] = {name:newSnippet.name, type:newSnippet.type};
+              if(!thisSc.snippets)
+              {
+                  thisSc.snippets = {};
+              }
+              thisSc.snippets[newSnippet.id] = editorRef.state.snippet;
+              //     {
+              //     name:newSnippet.name,
+              //     type:newSnippet.type,
+              //     redirect:newSnippet.redirect,
+              //     redirectSnippetId: newSnippet.redirectSnippetId,
+              //
+              // };
               that.setState({scripts:sc},()=>{
-                message.success('添加片段'+newSnippet.id+'成功')
+                message.success((mode==='create'?'添加片段':'修改片段')+newSnippet.id+'成功')
                 md.destroy();
                 console.log('当前脚本内容:',scriptId, that.state.scripts);
                 that.save();
@@ -480,10 +493,15 @@ class InteractiveMovieScriptEditor extends Component {
       )
     }
     //endregion
+    //获取脚本下的片段集合
+    getSnippetsFromScript(script)
+    {
+
+    }
     render() {
         let movieUrl = this.state.currentMovie.movieUrl;
         let posterUrl = this.state.currentMovie.posterUrl;
-        let duration = this.state.timeSliderRange;
+        let duration = this.state.currentMovie.duration;
         let onAutoPlayChange = this.onAutoPlayChange.bind(this);
         let onSelectModeChange = this.onSelectModeChange.bind(this);
         let onClickAddAnchorBtn = this.onClickAddAnchorBtn.bind(this);
@@ -565,9 +583,6 @@ class InteractiveMovieScriptEditor extends Component {
                                 当前节点:{this.state.currentSelectedNode}
                             </div>
                             <div>
-                                当前区域:{this.state.currentSelectRange}
-                            </div>
-                            <div>
                                 当前脚本:{currentSelectScriptId}
                             </div>
                         </div>
@@ -575,6 +590,7 @@ class InteractiveMovieScriptEditor extends Component {
                             <div id={'编辑器内部'} className={classNames.editorContent}>
                                 <div id={'按钮集'} className={classNames.buttons}>
                                     <Button onClick={onClickAddMovieSourceBtn}>添加视频</Button>
+                                    <Button onClick={()=>{localStorage.clear();message.success('缓存已清空');this.load()}}>清空缓存</Button>
                                     <div className={classNames.lineFlexRow}>
                                         <div>拖拽后自动播放</div>
                                         <Switch checked={this.state.authPlayWhenSlid} defaultChecked size={'small'}
@@ -623,6 +639,10 @@ class InteractiveMovieScriptEditor extends Component {
                                     (key,index)=>
                                     {
                                         let obj = scripts[key];
+                                        if (!obj)
+                                        {
+                                            return null;
+                                        }
                                         let scriptClass = classNames.script;
                                         let addSnippetBtn = null;
                                         if (currentSelectScriptId===key)
@@ -642,11 +662,23 @@ class InteractiveMovieScriptEditor extends Component {
                                             <div className={classNames.snippetListContent}>
                                                 {/*<div className={classNames.snippet}></div>*/}
                                                 {
-                                                    Object.keys(obj.snippets).map((sKey, sIndex) => {
+                                                    Object.keys(obj.snippets?obj.snippets:[]).map((sKey, sIndex) => {
                                                         return <div key={sKey} className={classNames.snippet}
                                                                     onClick={
                                                                       // ()=>this.setState({currentSelectedSnippet:obj.snippets[sKey]})
-                                                                      ()=>this.showSnippetEditor(key,obj.snippets[sKey])
+                                                                      ()=>{
+                                                                          const getMovie=(movieId)=>{
+                                                                              for (let i = 0; i < this.state.moviesSources.length; i++) {
+                                                                                  if(this.state.moviesSources[i].id === movieId)
+                                                                                  {
+                                                                                      return this.state.moviesSources[i];
+                                                                                  }
+                                                                              }
+                                                                              return {};
+                                                                          }
+                                                                          let movie = getMovie(obj.snippets[sKey].movieId);
+                                                                          // console.log('获取电影的结果:',  obj.snippets[sKey]);
+                                                                          this.showSnippetEditor(movie.id,movie.movieUrl, key,obj.snippets[sKey],'edit')}
                                                                     }
                                                         >
                                                             <div className={classNames.snippetTitle}>

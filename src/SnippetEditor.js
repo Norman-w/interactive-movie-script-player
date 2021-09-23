@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import classNames from './SnippetEditor.module.css'
-import {Radio,Input,Select} from "antd";
+import {Radio, Input, Select, Button} from "antd";
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
 import {act} from "@testing-library/react";
 const {Option} = Select;
@@ -12,19 +12,39 @@ snippetEditor可以继续进行细化了.各个片段的相关的信息 如时�
 class SnippetEditor extends Component {
     state=
         {
-            id:'',
-            name:'',
-            type:''
+            snippet:{},
+            movieId:'',
+            movieUrl:'',
+            scriptId:'',
+            mode:'create',
         }
         constructor(props) {
           super(props);
-          this.state=this.props;
         }
+        componentDidMount() {
+            this.setState({
+                snippet:this.props.snippet,
+                movieId:this.props.movieId,
+                movieUrl:this.props.movieUrl,
+                scriptId:this.props.scriptId,
+                mode:this.props.mode,
+                transitionSnippets:this.props.transitionSnippets?this.props.transitionSnippets:[],
+                allSnippets:this.props.allSnippets?this.props.allSnippets:[],
+            });
+        }
+    getSnippetFullKey(snippet)
+    {
+        let ret = snippet.scriptId+'.'+snippet.movieId+'.'+snippet.type+'.'+snippet.id;
+        console.log('编辑页面 返回脚本index', ret);
+        return ret;
+    }
     render() {
         let snippet = this.state.snippet;
-        let movie = this.state.movie;
+        let movieId = this.state.movieId;
+        let movieUrl = this.state.movieUrl;
         let scriptId = this.state.scriptId;
-        if (!snippet)
+        let s = this.state.allSnippets;
+        if (!snippet || ! movieId || !scriptId || !movieUrl)
         {
           return null;
         }
@@ -33,12 +53,12 @@ class SnippetEditor extends Component {
             <div>
               <MovieSnippetPlayer
                 autoPlay
-                movieUrl={movie.movieUrl}
+                movieUrl={movieUrl}
                 startTime={snippet.startTime}
                 endTime={snippet.endTime}/>
                 <div className={classNames.info}>
                   <div className={classNames.ownerInfo}>
-                    <div>所属视频:{movie.id}</div>
+                    <div>所属视频:{movieId}</div>
                     <div>所属脚本:{scriptId}</div>
                   </div>
                   <div className={classNames.timeInfo}>
@@ -47,32 +67,36 @@ class SnippetEditor extends Component {
                     <div>持续:{snippet.duration}</div></div>
                 </div>
               <div className={classNames.idNameLine}>
-                  <Input placeholder={'脚本id'} value={this.state.id}
+                  <Input placeholder={'脚本id'} value={this.state.snippet.id}
+                         disabled={this.state.mode!=='create'}
                                                                 maxLength={20}
                                                                 onChange={
                                                                     (e)=>{
-                                                                        this.setState({id:''+e.target.value})
-                                                                        snippet.id=''+e.target.value;
+                                                                        this.props.snippet.id=''+e.target.value;
+                                                                        this.props.snippet.index=this.getSnippetFullKey(this.props.snippet);
+                                                                        this.setState({snippet: this.props.snippet})
                                                                     }
                                                                 }
                 />
-                    <Input placeholder={'脚本名称'} value={this.state.name}
+                    <Input placeholder={'脚本名称'} value={this.state.snippet.name}
                            maxLength={20}
+
                            onChange={
                                (e)=>{
-                                   this.setState({name:''+e.target.value})
-                                   snippet.name=''+e.target.value;
+
+                                   this.props.snippet.name=''+e.target.value;
+                                   this.setState({snippet: this.props.snippet})
                                }
                            }
                     /></div>
               <div style={{marginTop:22}}>选择该片段的类型:</div>
               <Radio.Group
                  onChange={v=>{
-                   snippet.type=v.target.value;
-                   this.setState({type:v.target.value})
-                   console.log(v.target.value)
+                   this.props.snippet.type=v.target.value;
+                     this.props.snippet.index=this.getSnippetFullKey(this.props.snippet);
+                     this.setState({snippet: this.props.snippet})
                  }}
-                 value={this.state.type}
+                 value={this.state.snippet.type}
                 // value={snippet.type}
               >
                 <Radio value={'question'}>问题</Radio>
@@ -81,30 +105,49 @@ class SnippetEditor extends Component {
                 <Radio value={'transitions'}>过场</Radio>
               </Radio.Group>
               <div id={'可选择的过场集合'} style={{marginTop:22}}
-                   hidden={this.state.type!=='questionWithWaiter'}
+                   hidden={this.state.snippet.type!=='questionWithWaiter'}
               >
                 <div>选择过场视频:</div>
                 <div className={classNames.transitionsList}>
-                  <div className={classNames.transition}>
-                    <MovieSnippetPlayer
-                      autoPlay={false}
-                      movieUrl={'https://www.enni.group/file/testmovie/2.MP4'}
-                      startTime={88}
-                      endTime={90}/>
-                  </div>
-                  <div className={classNames.transitionSelected}></div>
+                    {
+                        s.map((item)=>{
+                            if (item.type!=='transitions')
+                            {
+                                return null;
+                            }
+                            let c = classNames.transition;
+                            if (this.state.snippet.transitionSnippetIndex === item.index)
+                            {
+                                c = classNames.transitionSelected;
+                            }
+                            return <div key={item.index} className={c}
+                                        onClick={()=>{
+                                            let oldSnippet = this.state.snippet;
+                                            oldSnippet.transitionSnippetIndex = item.index;
+                                            this.setState({snippet: oldSnippet});
+                                        }}
+                            >
+                                <MovieSnippetPlayer
+                                    autoPlay={false}
+                                    movieUrl={item.movieUrl}
+                                    startTime={item.startTime}
+                                    endTime={item.endTime}/>
+                            </div>
+                        })
+                    }
                 </div>
               </div>
 
               <div
-                hidden={this.state.type!=='info'}>
+                hidden={this.state.snippet.type!=='info'}>
                 <div style={{marginTop:22}}>片段播放结束后动作:</div>
               <Radio.Group
                 onChange={(e)=>{
                   // console.log('eshi',e.target.value);
-                  this.setState({redirect:e.target.value})
+                    this.props.snippet.redirect=e.target.value;
+                    this.setState({snippet: this.props.snippet})
                 }}
-                value={this.state.redirect}
+                value={this.state.snippet.redirect}
               >
                 {/*<Radio value={'toWaiterSnippet'}>等待交互</Radio>*/}
                 {/*<Radio value={'replay'}>重播</Radio>*/}
@@ -113,27 +156,39 @@ class SnippetEditor extends Component {
               </Radio.Group>
               </div>
               <div id={'可选择的目标视频'} style={{marginTop:22}}
-                   hidden={!this.state.redirect || this.state.type!=='info'}
+                   hidden={!this.state.snippet.redirect || this.state.snippet.type!=='info'}
               >
                 <div>选择将要跳转的目标视频:</div>
                 <div className={classNames.transitionsList}>
-                  <div className={classNames.transition}>
-                    <MovieSnippetPlayer
-                      autoPlay={false}
-                      movieUrl={'https://www.enni.group/file/testmovie/2.MP4'}
-                      startTime={88}
-                      endTime={90}/>
-                  </div>
-                  {/*<div className={classNames.transition}></div>*/}
-                  {/*<div className={classNames.transition}></div>*/}
-                  {/*<div className={classNames.transition}></div>*/}
-                  {/*<div className={classNames.transition}></div>*/}
-                  {/*<div className={classNames.transition}></div>*/}
-                  {/*<div className={classNames.transition}></div>*/}
-                  {/*<div className={classNames.transition}></div>*/}
-                  <div className={classNames.transitionSelected}></div>
+                    {
+                        s.map((item)=>{
+                            if (item.id===this.state.snippet.id)
+                            {
+                                return null;
+                            }
+                            let c = classNames.transition;
+                            if (this.state.snippet.redirectSnippetId === item.id)
+                            {
+                                c = classNames.transitionSelected;
+                            }
+                            return <div key={'all'+item.scriptId+item.movieId+item.id} className={c}
+                                        onClick={()=>{
+                                            let oldSnippet = this.state.snippet;
+                                            oldSnippet.redirectSnippetId = item.id;
+                                            this.setState({snippet: oldSnippet});
+                                        }}
+                            >
+                                <MovieSnippetPlayer
+                                    autoPlay={false}
+                                    movieUrl={item.movieUrl}
+                                    startTime={item.startTime}
+                                    endTime={item.endTime}/>
+                            </div>
+                        })
+                    }
                 </div>
               </div>
+                <div id={'删除行'} hidden={this.state.mode==='create'} style={{marginTop:'18px'}}><Button danger onClick={this.props.onDelete.bind(this)}>删除</Button></div>
             </div>
         );
     }

@@ -9,6 +9,8 @@ import {
 import "video-react/dist/video-react.css"; // import css
 import './video-react-rewrite.css';
 import ScriptProcessor from "./scriptProcessor";
+import MovieSnippetPlayer from "./MovieSnippetPlayer";
+import {message} from "antd";
 //endregion
 
 //region 为了让他能有自动的代码提示和为以后结构设计有方向,直接定义了默认结构信息在这里.
@@ -58,49 +60,41 @@ const emptyMovieInfo =
   }
 //endregion
 class InteractiveMovieScriptPlayer extends Component {
-
+  snippetPlayer=null;
   //region 页面数据  state
   state =
     {
-      currentMovie: {},
-      currentMovieId:'',
-      lastPausePos:0,
+      currentSnippet:{},
     }
-    scriptProcessor = null;
-  scripts={};
-  currentAnchor=null;
+    scripts={};
+    snippetsDic={};
+    movieResources = [];
   //endregion
 
   //region  构造函数
   constructor(props) {
     super(props);
-    console.log('当前InteractiveMovieScriptPlayer的构造函数给入的参数是:', this.props);
+    // console.log('当前InteractiveMovieScriptPlayer的构造函数给入的参数是:', this.props);
+    this.movieResources = this.props.movieResources;
     this.scripts = this.props.scripts;
-    let keys = Object.keys(this.props.scripts);
-    let movies = {};
-    let anchors = {};
-    for (let i = 0; i < keys.length; i++) {
-      let key = keys[i];
-      let script = this.scripts[key];
-      console.log('当前脚本:', script);
-      if (script && script.movies) {
-        let a = movies;
-        movies = {...a, ...script.movies};
+    let scriptsKeys = Object.keys(this.scripts);
+    for (let i = 0; i < scriptsKeys.length; i++) {
+      let scriptKey = scriptsKeys[i];
+      let script = this.scripts[scriptKey];
+      // console.log('当前脚本:',script);
+      let snippetsKeys = Object.keys(script.snippets);
+      for (let j = 0; j < snippetsKeys.length; j++) {
+        let snippetKey = snippetsKeys[j];
+        let snippet = script.snippets[snippetKey];
+        // console.log('当前片段:',snippet);
+        this.snippetsDic[snippet.index] = snippet;
       }
-      if (script && script.anchors) {
-
-        let a = anchors;
-        anchors = {...a, ...script.anchors};
-      }
-      this.scriptProcessor = new ScriptProcessor(movies, anchors);
     }
-    if (movies) {
-      let movieKeys = Object.keys(movies);
-      this.state.currentMovie = movies[movieKeys[0]];
-      this.state.currentMovieId = movieKeys[0];
-    }
-    // console.log('InteractiveMovieScriptPlayer构造函数完成,movies:', movies, 'scripts:', this.scripts);
-    console.log('当前的movie', this.state.currentMovie)
+  }
+  getSnippetFullKey(snippet)
+  {
+    let ret = snippet.scriptId+'.'+snippet.movieId+'.'+snippet.type+'.'+snippet.id;
+    return ret;
   }
   jsonField2Array(jsonObj)
   {
@@ -115,77 +109,74 @@ class InteractiveMovieScriptPlayer extends Component {
   }
 
   componentDidMount() {
+    let first = this.getFirstEntrySnippet();
+    this.setState({currentSnippet:first});
+    this.snippetPlayer.changeSnippet(first,true);
+    console.log('设置第一播放片段为:',first)
+  }
+  //endregion
+
+  //region 获取第一个入口点片段
+
+  getFirstEntrySnippet()
+  {
+    let keys = Object.keys(this.snippetsDic);
+    for (let i = 0; i < keys.length; i++) {
+      let current = this.snippetsDic[keys[i]];
+      if (current.type.indexOf('question') >=0)
+      {
+        return current;
+      }
+    }
+    return null;
   }
   //endregion
 
   //region 当播放器时间变更
-  onPlayerTimeUpdate(e)
+  onSnippetFinished(snippet)
   {
-    if (this.currentAnchor)
+    // console.log('片段播放完毕,片段是:',snippet);
+    if (snippet.transitionSnippetIndex)
     {
-      console.log('获取到了锚点,你是在获取到了锚点以后没有没有及时停止导致的播放器时间又更新了,你等 等一会的', this.currentAnchor);
-      return;
-    }
-    // console.log('时间更新',e.target.currentTime, this.state.currentMovie);
-    let t = e.target.currentTime;
-    let anchor = this.scriptProcessor.getAnchors(this.state.currentMovieId,this.state.lastPausePos, t);
-    if (anchor)
-    {
-      // this.currentAnchor= anchor;
-      console.log('获取到了anchor', anchor);
-      // this.player.pause();
-      // this.player.seek(anchor.end);
-      this.player.seek(anchor.start);
-    }
-  }
-  //endregion
-  //region 暂停
-  onPause(e)
-  {
-    this.setState({lastPausePos: e.target.currentTime}
-    ,e=>{
-        console.log('上次停止时间:', this.state.lastPausePos)
+      let newSnippet = this.snippetsDic[snippet.transitionSnippetIndex];
+      if (!newSnippet)
+      {
+        message.error('脚本'+ snippet.transitionSnippetIndex+'不存在');
+        return;
       }
-    );
+      // console.log('要播放的新片段是:',this.snippetsDic)
+      this.setState({currentSnippet:newSnippet})
+      this.snippetPlayer.changeSnippet(newSnippet,true);
+    }
+    else if(snippet.type==='transitions')
+    {
+      this.snippetPlayer.rePlay();
+    }
   }
   //endregion
-  //region 开始播放
-  onPlay(e)
-  {
-    console.log('视频开始播放了:', e);
-  }
-  //endregion
+
   //region 渲染
   render() {
-    let onClickStartBtn = ()=>{this.player.play();
-    // console.log('播放了视频')
-    };
     let masked=false;
     // console.log('渲染播放器,url是:',this.state.currentMovie);
+    if (!this.state || !this.state.currentSnippet)
+    {
+      return '加载中';
+    }
     return (
       <div className={classNames.main}>
         <div className={masked ? classNames.playerMasked : classNames.player}>
-          <Player
-            ref={c => {
-              this.player = c;
-            }}
-            poster={this.state.currentMovie.posterUrl}
-            autoPlay
-            src={this.state.currentMovie.movieUrl}
-            onTimeUpdate={this.onPlayerTimeUpdate.bind(this)}
-            onPause={this.onPause.bind(this)}
-            onPlay={this.onPlay.bind(this)}
-          >
-            <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
-            </ControlBar>
-            <BigPlayButton position={'hide'}/>
-          </Player>
-        </div>
-        <div className={classNames.controlPanel}
-             onClick={onClickStartBtn}
-          // onMouseUp={onClickStartBtn}
-        >
-          <div className={classNames.closeBtn}>X</div>
+          <MovieSnippetPlayer
+                              movieId={this.state.currentSnippet.movieId}
+                              autoPlay={true}
+                              startTime={this.state.currentSnippet.startTime}
+                              endTime={this.state.currentSnippet.endTime}
+                              movieUrl={this.state.currentSnippet.movieUrl}
+                              snippet={this.state.currentSnippet}
+                              onSnippetFinished={(e)=>{this.onSnippetFinished(e)}
+                              }
+                              ref={e=>this.snippetPlayer=e}
+          />
         </div>
       </div>
     )
