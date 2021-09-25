@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import classNames from './AnswerSelector.module.css';
 import DefaultAnswerOptions from "./DefaultAnswerOptions";
 
+// import 'antd/dist/antd.css'
+
 class AnswerSelector extends Component {
   state={
     answers:[],

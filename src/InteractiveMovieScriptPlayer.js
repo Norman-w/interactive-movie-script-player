@@ -11,6 +11,7 @@ import './video-react-rewrite.css';
 import ScriptProcessor from "./scriptProcessor";
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
 import {Button, message} from "antd";
+// import 'antd/dist/antd.css'
 import AnswerSelector from "./AnswerSelector";
 //endregion
 
@@ -158,7 +159,12 @@ class InteractiveMovieScriptPlayer extends Component {
               snippetIndex: Object.keys(this.snippetsDic)[2],
               title:'A',
               desc:'打印到快递单',
-              content:<Button>确认</Button>
+              // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+              content:<div>
+                <div>哈哈</div>
+                <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+              </div>
+
             },
             {
             id: 'a2',
