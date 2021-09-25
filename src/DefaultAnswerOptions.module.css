@@ -1,0 +1,32 @@
+.main
+{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.title
+{
+  text-shadow: 1px 1px 3px lightskyblue;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  font-size: 30px;
+  flex-wrap: wrap;
+}
+.desc
+{
+  /*border: orangered 1px solid;*/
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  font-size: 20px;
+  text-shadow: 0 0 3px lightskyblue;
+  flex-wrap: wrap;
+}

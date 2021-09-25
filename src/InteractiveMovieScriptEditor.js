@@ -657,9 +657,9 @@ class InteractiveMovieScriptEditor extends Component {
                                         return <div key={key} className={scriptClass}
                                                     onClick={()=>{onClickScript(key)}}
                                         >
-                                            <div className={classNames.scriptTitle}>{key}</div>
-                                            <div className={classNames.scriptSubTitle}>{obj.name}</div>
-                                            <div className={classNames.snippetListContent}>
+                                            <div id={'脚本标题'} className={classNames.scriptTitle}>{key}</div>
+                                            <div id={'脚本副标题'} className={classNames.scriptSubTitle}>{obj.name}</div>
+                                            <div id={'片段列表容器'} className={classNames.snippetListContent}>
                                                 {/*<div className={classNames.snippet}></div>*/}
                                                 {
                                                     Object.keys(obj.snippets?obj.snippets:[]).map((sKey, sIndex) => {

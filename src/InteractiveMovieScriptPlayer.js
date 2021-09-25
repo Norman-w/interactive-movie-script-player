@@ -10,7 +10,8 @@ import "video-react/dist/video-react.css"; // import css
 import './video-react-rewrite.css';
 import ScriptProcessor from "./scriptProcessor";
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
-import {message} from "antd";
+import {Button, message} from "antd";
+import AnswerSelector from "./AnswerSelector";
 //endregion
 
 //region 为了让他能有自动的代码提示和为以后结构设计有方向,直接定义了默认结构信息在这里.
@@ -60,6 +61,7 @@ const emptyMovieInfo =
   }
 //endregion
 class InteractiveMovieScriptPlayer extends Component {
+  answerSelectorRef = null;
   snippetPlayer=null;
   //region 页面数据  state
   state =
@@ -147,6 +149,35 @@ class InteractiveMovieScriptPlayer extends Component {
       // console.log('要播放的新片段是:',this.snippetsDic)
       this.setState({currentSnippet:newSnippet})
       this.snippetPlayer.changeSnippet(newSnippet,true);
+      if (snippet.type.indexOf('question')>=0) {
+        //这是个问题,那么要对问题进行答案的显示展示
+        this.answerSelectorRef.showAnswers(
+          [
+            {
+              id: 'a1',
+              snippetIndex: Object.keys(this.snippetsDic)[2],
+              title:'A',
+              desc:'打印到快递单',
+              content:<Button>确认</Button>
+            },
+            {
+            id: 'a2',
+            snippetIndex: Object.keys(this.snippetsDic)[3],
+              title:'B',
+              desc:'打印到单独详单'
+            },
+            {
+              id: 'a3',
+              snippetIndex:Object.keys(this.snippetsDic)[4],
+              title:'C',
+              desc:'重新观看说明'
+            },
+            // {id:'a4'},
+            // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
+            // {id:'a9'}
+          ]
+        )
+      }
     }
     else if(snippet.type==='transitions')
     {
@@ -155,9 +186,34 @@ class InteractiveMovieScriptPlayer extends Component {
   }
   //endregion
 
+  //region 根据index,变换到指定的片段
+  changeSnippet(index)
+  {
+    let newSnippet = this.snippetsDic[index];
+    if (!newSnippet)
+    {
+      message.error('脚本'+  index +'不存在');
+      return;
+    }
+    // console.log('要播放的新片段是:',this.snippetsDic)
+    this.setState({currentSnippet:newSnippet})
+    this.snippetPlayer.changeSnippet(newSnippet,true);
+  }
+  //endregion
+
+  //region 当用户对跳出来的问题进行了交互选择 onSelectAnswer
+  onSelectAnswer(answer)
+  {
+    let id = answer.id;
+    let destAnswerSnippetIndex = answer.snippetIndex;
+    this.changeSnippet(destAnswerSnippetIndex);
+    this.answerSelectorRef.showAnswers([]);
+  }
+  //endregion
+
   //region 渲染
   render() {
-    let masked=false;
+    let masked=this.state.currentSnippet.type==='transitions';
     // console.log('渲染播放器,url是:',this.state.currentMovie);
     if (!this.state || !this.state.currentSnippet)
     {
@@ -178,6 +234,12 @@ class InteractiveMovieScriptPlayer extends Component {
                               ref={e=>this.snippetPlayer=e}
           />
         </div>
+        <AnswerSelector ref={e=>this.answerSelectorRef = e}
+                        onSelectAnswer={e => {
+                          this.onSelectAnswer(e);
+                        }
+                        }
+        />
       </div>
     )
   }
