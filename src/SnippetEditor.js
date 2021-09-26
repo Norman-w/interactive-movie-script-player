@@ -1,7 +1,8 @@
 import React, {Component} from 'react';
 import classNames from './SnippetEditor.module.css'
-import {Radio, Input, Select, Button} from "antd";
+import {Radio, Input, Select, Button, InputNumber} from "antd";
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
+import 'antd/dist/antd.css';
 import {act} from "@testing-library/react";
 const {Option} = Select;
 /*2021年09月20日17:23:01
@@ -26,6 +27,7 @@ class SnippetEditor extends Component {
                 snippet:this.props.snippet,
                 movieId:this.props.movieId,
                 movieUrl:this.props.movieUrl,
+              movieDuration:this.props.movieDuration,
                 scriptId:this.props.scriptId,
                 mode:this.props.mode,
                 transitionSnippets:this.props.transitionSnippets?this.props.transitionSnippets:[],
@@ -38,10 +40,37 @@ class SnippetEditor extends Component {
         console.log('编辑页面 返回脚本index', ret);
         return ret;
     }
+    //region 开始时间改变了
+  onChangeStartTime(value)
+  {
+    let sn = this.state.snippet;
+    sn.startTime=value;
+    this.setState({snippet:sn}
+    ,()=>
+      {
+        this.movieSnippetPlayerRef.rePlay(value);
+      }
+    );
+  }
+  //endregion
+  //region 结束时间改变了
+  onChangeEndTime(value)
+  {
+    let sn = this.state.snippet;
+    sn.endTime=value;
+    this.setState({snippet:sn}
+      ,()=>
+      {
+        this.movieSnippetPlayerRef.rePlay(value);
+      }
+    );
+  }
+  //endregion
     render() {
         let snippet = this.state.snippet;
         let movieId = this.state.movieId;
         let movieUrl = this.state.movieUrl;
+        let movieDuration = this.state.movieDuration;
         let scriptId = this.state.scriptId;
         let s = this.state.allSnippets;
         if (!snippet || ! movieId || !scriptId || !movieUrl)
@@ -50,21 +79,55 @@ class SnippetEditor extends Component {
         }
 
         return (
-            <div>
+            <div className={classNames.main}>
               <MovieSnippetPlayer
                 autoPlay
                 movieUrl={movieUrl}
                 startTime={snippet.startTime}
-                endTime={snippet.endTime}/>
+                endTime={snippet.endTime}
+                ref={e=>this.movieSnippetPlayerRef=e}
+              />
                 <div className={classNames.info}>
                   <div className={classNames.ownerInfo}>
                     <div>所属视频:{movieId}</div>
                     <div>所属脚本:{scriptId}</div>
                   </div>
-                  <div className={classNames.timeInfo}>
-                    <div>开始:{snippet.startTime}</div>
-                    <div>结束:{snippet.endTime}</div>
-                    <div>持续:{snippet.duration}</div></div>
+                  <div id={'时间信息'} className={classNames.timeInfo}>
+                    <div id={'开始时间行'} className={classNames.timeInfoLine}>
+                      <div className={classNames.timeLabel}>开始时间:</div>
+                      <div className={classNames.timeInput}>
+                        <InputNumber
+                          style={{
+                            width: "100%",
+                          }}
+                          defaultValue={snippet.startTime}
+                          value={snippet.startTime}
+                          min="0"
+                          max={''+movieDuration}
+                          step="0.01"
+                          onChange={(e)=>this.onChangeStartTime(e)}
+                          stringMode
+                        />
+                        </div>
+                    </div>
+                    <div id={'结束时间行'} className={classNames.timeInfoLine}>
+                      <div className={classNames.timeLabel}>结束时间:</div>
+                      <div className={classNames.timeInput}>
+                        <InputNumber
+                          style={{
+                            width: '100%',
+                          }}
+                          defaultValue={snippet.endTime}
+                          value={snippet.endTime}
+                          min="0"
+                          max={''+movieDuration}
+                          step="0.01"
+                          onChange={(e)=>this.onChangeEndTime(e)}
+                          stringMode
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               <div className={classNames.idNameLine}>
                   <Input placeholder={'脚本id'} value={this.state.snippet.id}
@@ -167,14 +230,14 @@ class SnippetEditor extends Component {
                                 return null;
                             }
                             let c = classNames.transition;
-                            if (this.state.snippet.redirectSnippetId === item.id)
+                            if (this.state.snippet.redirectSnippetIndex === item.index)
                             {
                                 c = classNames.transitionSelected;
                             }
                             return <div key={'all'+item.scriptId+item.movieId+item.id} className={c}
                                         onClick={()=>{
                                             let oldSnippet = this.state.snippet;
-                                            oldSnippet.redirectSnippetId = item.id;
+                                            oldSnippet.redirectSnippetIndex = item.index;
                                             this.setState({snippet: oldSnippet});
                                         }}
                             >

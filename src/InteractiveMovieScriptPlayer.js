@@ -138,56 +138,55 @@ class InteractiveMovieScriptPlayer extends Component {
   //region 当播放器时间变更
   onSnippetFinished(snippet)
   {
-    // console.log('片段播放完毕,片段是:',snippet);
-    if (snippet.transitionSnippetIndex)
-    {
-      let newSnippet = this.snippetsDic[snippet.transitionSnippetIndex];
-      if (!newSnippet)
-      {
-        message.error('脚本'+ snippet.transitionSnippetIndex+'不存在');
-        return;
-      }
-      // console.log('要播放的新片段是:',this.snippetsDic)
-      this.setState({currentSnippet:newSnippet})
-      this.snippetPlayer.changeSnippet(newSnippet,true);
-      if (snippet.type.indexOf('question')>=0) {
-        //这是个问题,那么要对问题进行答案的显示展示
-        this.answerSelectorRef.showAnswers(
-          [
-            {
-              id: 'a1',
-              snippetIndex: Object.keys(this.snippetsDic)[2],
-              title:'A',
-              desc:'打印到快递单',
-              // content:<Button size={'large'} type={'primary'} danger>确认</Button>
-              content:<div>
-                <div>哈哈</div>
-                <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
-              </div>
+    console.log('片段播放完毕,片段是:',snippet);
+    if (snippet.type.indexOf('question')>=0) {
+      //这是个问题,那么要对问题进行答案的显示展示
+      this.answerSelectorRef.showAnswers(
+        [
+          {
+            id: 'a1',
+            snippetIndex: Object.keys(this.snippetsDic)[2],
+            title:'A',
+            desc:'打印到快递单',
+            // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+            content:<div>
+              <div>哈哈</div>
+              <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+            </div>
 
-            },
-            {
+          },
+          {
             id: 'a2',
             snippetIndex: Object.keys(this.snippetsDic)[3],
-              title:'B',
-              desc:'打印到单独详单'
-            },
-            {
-              id: 'a3',
-              snippetIndex:Object.keys(this.snippetsDic)[4],
-              title:'C',
-              desc:'重新观看说明'
-            },
-            // {id:'a4'},
-            // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
-            // {id:'a9'}
-          ]
-        )
-      }
+            title:'B',
+            desc:'打印到单独详单'
+          },
+          {
+            id: 'a3',
+            snippetIndex:Object.keys(this.snippetsDic)[4],
+            title:'C',
+            desc:'重新观看说明'
+          },
+          // {id:'a4'},
+          // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
+          // {id:'a9'}
+        ]
+      )
+    }
+    if (snippet.redirectSnippetIndex)
+    {
+      this.changeSnippet(snippet.redirectSnippetIndex);
+      return;
+    }
+    else if (snippet.transitionSnippetIndex)
+    {
+      this.changeSnippet(snippet.transitionSnippetIndex);
+      return;
     }
     else if(snippet.type==='transitions')
     {
       this.snippetPlayer.rePlay();
+      return;
     }
   }
   //endregion

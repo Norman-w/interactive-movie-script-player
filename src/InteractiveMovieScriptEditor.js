@@ -381,9 +381,9 @@ class InteractiveMovieScriptEditor extends Component {
             transitionSnippetIndex:null,
             scriptId:scriptId,
         };
-        this.showSnippetEditor(this.state.currentMovie.id, this.state.currentMovie.movieUrl, scriptId,newSnippet,'create');
+        this.showSnippetEditor(this.state.currentMovie.id, this.state.currentMovie.movieUrl,this.state.currentMovie.duration, scriptId,newSnippet,'create');
     }
-    showSnippetEditor(movieId,movieUrl, scriptId,newSnippet,mode)
+    showSnippetEditor(movieId,movieUrl,movieDuration, scriptId,newSnippet,mode)
     {
       // console.log('显示片段编辑器:', newSnippet);
         //region 获取当前可用的过场视频集合
@@ -412,6 +412,7 @@ class InteractiveMovieScriptEditor extends Component {
       let content = <SnippetEditor mode={mode}
                                    movieId={movieId}
                                    movieUrl={movieUrl}
+                                   movieDuration={movieDuration}
                                    scriptId={scriptId}
                                    snippet={newSnippet}
                                    onDelete={()=>{
@@ -445,6 +446,7 @@ class InteractiveMovieScriptEditor extends Component {
           icon:null,
           content:content,
           closable:true,
+          maskClosable:true,
             okText:'保存',
           onOk:(e)=>
           {
@@ -678,7 +680,7 @@ class InteractiveMovieScriptEditor extends Component {
                                                                           }
                                                                           let movie = getMovie(obj.snippets[sKey].movieId);
                                                                           // console.log('获取电影的结果:',  obj.snippets[sKey]);
-                                                                          this.showSnippetEditor(movie.id,movie.movieUrl, key,obj.snippets[sKey],'edit')}
+                                                                          this.showSnippetEditor(movie.id,movie.movieUrl,movie.duration, key,obj.snippets[sKey],'edit')}
                                                                     }
                                                         >
                                                             <div className={classNames.snippetTitle}>

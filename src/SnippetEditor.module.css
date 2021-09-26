@@ -1,3 +1,8 @@
+.main
+{
+  width: 100%;
+  /*border: 1px solid forestgreen;*/
+}
 .lineFlexRow
 {
     display: flex;
@@ -7,10 +12,12 @@
 }
 .info
 {
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
+  /*border: 1px solid dodgerblue;*/
 }
 .idNameLine
 {
@@ -22,12 +29,32 @@
   composes: lineFlexRow;
   width: 100%;
   justify-content: space-between;
+  /*border: 1px solid darkslategrey;*/
 }
 .timeInfo
 {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  justify-content: flex-start;
+  align-items: center;
+  /*border: 1px solid dodgerblue;*/
+}
+.timeInfoLine
+{
   composes: lineFlexRow;
   width: 100%;
-  justify-content: space-between;
+}
+.timeLabel
+{
+  min-width: 120px;
+  /*border: 1px solid red;*/
+}
+.timeInput
+{
+  min-width: 100px;
+  width: 100%;
+  /*border: 1px solid green;*/
 }
 .transitionsList
 {

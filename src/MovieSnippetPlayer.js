@@ -22,10 +22,22 @@ class MovieSnippetPlayer extends Component {
     super(props);
   }
   componentDidMount() {
-    if (this.props.snippet)
+    this.updateProps2State(this.props);
+  }
+
+  componentWillReceiveProps(nextProps, nextContext) {
+    if (nextProps)
     {
-      let pSnippet = this.props.snippet;
-      this.setState({snippet:this.props.snippet,
+      this.updateProps2State(nextProps);
+    }
+  }
+
+  updateProps2State(props)
+  {
+    if (props.snippet)
+    {
+      let pSnippet = props.snippet;
+      this.setState({snippet:props.snippet,
         startTime:pSnippet.startTime,
         endTime:pSnippet.endTime,
         movieUrl:pSnippet.movieUrl,
@@ -37,14 +49,14 @@ class MovieSnippetPlayer extends Component {
     else
     {
       this.setState(
-          {
-            startTime:this.props.startTime,
-            endTime:this.props.endTime,
-            movieUrl:this.props.movieUrl,
-            movieId:this.props.movieId,
-            posterUrl:this.props.posterUrl,
-            autoPlay:this.props.autoPlay,
-          }
+        {
+          startTime:props.startTime,
+          endTime:props.endTime,
+          movieUrl:props.movieUrl,
+          movieId:props.movieId,
+          posterUrl:props.posterUrl,
+          autoPlay:props.autoPlay,
+        }
       )
     }
   }
@@ -100,7 +112,7 @@ class MovieSnippetPlayer extends Component {
     )
   }
   //endregion
-  //region 重播
+  //region 重播 如果指定了seekTo 那就跳转到指定的位置 如果没指定  那就跳转到当前state的startTime
   rePlay()
   {
     this.player.seek(this.state.startTime);
