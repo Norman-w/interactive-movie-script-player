@@ -10,6 +10,7 @@ class AnswerSelector extends Component {
     hoverAnswerIndex:-1,
   }
   componentDidMount() {
+    this.setState({answers:this.props.answerOptions})
   }
 
   showAnswers(answersList)
@@ -67,6 +68,7 @@ class AnswerSelector extends Component {
           let heightPercent = 90/rowCount;
           //endregion
           return   <div className={aClass}
+                        key={item.id}
                         style={
                           {
                             width:''+widthPercent+'%',

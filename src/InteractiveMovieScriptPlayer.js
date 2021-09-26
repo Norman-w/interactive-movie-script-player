@@ -13,8 +13,20 @@ import MovieSnippetPlayer from "./MovieSnippetPlayer";
 import {Button, message} from "antd";
 // import 'antd/dist/antd.css'
 import AnswerSelector from "./AnswerSelector";
+import SenderMobileInputForm from "./QPScriptInteractors/SenderMobileInputForm";
+import ItemInfoPrintingDestSelectForm from "./QPScriptInteractors/ItemInfoPrintingDestSelectForm";
 //endregion
-
+//region 正在交互中的问题类型枚举.
+// const interactingQuestionTypeEnum=
+//     {
+//       //没有在交互
+//       none:'',
+//       //输入
+//       input:'input',
+//       //选择器
+//       selector:'selector',
+//     }
+    //endregion
 //region 为了让他能有自动的代码提示和为以后结构设计有方向,直接定义了默认结构信息在这里.
 const emptyTrigger={
   //触发器的编号
@@ -68,6 +80,8 @@ class InteractiveMovieScriptPlayer extends Component {
   state =
     {
       currentSnippet:{},
+      //正在交互中的问题类型
+      interactingQuestionDom:null,
     }
     scripts={};
     snippetsDic={};
@@ -138,40 +152,113 @@ class InteractiveMovieScriptPlayer extends Component {
   //region 当播放器时间变更
   onSnippetFinished(snippet)
   {
-    console.log('片段播放完毕,片段是:',snippet);
+    // console.log('片段播放完毕,片段是:',snippet);
     if (snippet.type.indexOf('question')>=0) {
-      //这是个问题,那么要对问题进行答案的显示展示
-      this.answerSelectorRef.showAnswers(
-        [
+      //region 如果是需要输入手机号
+      if (snippet.index==='input.initMovieSet2.questionWithWaiter.inputMobile')
+      {
+        let senderMobileInputForm =<SenderMobileInputForm onSubmit={(e) => {
+          // console.log(e);
+          this.setState({interactingQuestionDom: null}, () => {
+                this.changeSnippet('selectPrintMode.initMovieSet1.questionWithWaiter.selectPrintMode');
+              }
+          );
+        }}
+        />;
+        //如果当前的脚本是让输入手机号码,构造完了设置手机号的dom以后 显示在播放器的上层
+        this.setState({interactingQuestionDom:senderMobileInputForm}
+            ,()=>
+            {
+              //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
+              if (snippet.transitionSnippetIndex)
+              {
+                this.changeSnippet(snippet.transitionSnippetIndex);
+              }
+            }
+        )
+        return;
+      }
+      //endregion
+      //region 另外如果是需要选择如何打印商品详情
+      else if(snippet.index ==='selectPrintMode.initMovieSet1.questionWithWaiter.selectPrintMode')
+      {
+        let answerOptions = [
           {
-            id: 'a1',
+            id: 'a',
             snippetIndex: Object.keys(this.snippetsDic)[2],
             title:'A',
-            desc:'打印到快递单',
+            // desc:'',
             // content:<Button size={'large'} type={'primary'} danger>确认</Button>
-            content:<div>
-              <div>哈哈</div>
-              <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
-            </div>
-
+            // content:<div>
+            //   <div>哈哈</div>
+            //   <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+            // </div>
           },
           {
-            id: 'a2',
+            id: 'b',
             snippetIndex: Object.keys(this.snippetsDic)[3],
             title:'B',
             desc:'打印到单独详单'
           },
-          {
-            id: 'a3',
-            snippetIndex:Object.keys(this.snippetsDic)[4],
-            title:'C',
-            desc:'重新观看说明'
-          },
+          // {
+          //   id: 'c',
+          //   snippetIndex:Object.keys(this.snippetsDic)[4],
+          //   title:'C',
+          //   desc:''
+          // },
           // {id:'a4'},
           // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
           // {id:'a9'}
-        ]
-      )
+        ];
+        let selectPrintModeForm=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
+          let id = answer.id;
+          let destAnswerSnippetIndex = answer.snippetIndex;
+          this.changeSnippet(destAnswerSnippetIndex);
+          this.setState({interactingQuestionDom:null})
+        }}/>
+        this.setState({interactingQuestionDom:selectPrintModeForm}
+            ,()=>
+            {
+              //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
+              if (snippet.transitionSnippetIndex)
+              {
+                this.changeSnippet(snippet.transitionSnippetIndex);
+              }
+            }
+        )
+      }
+      //endregion
+      //这是个问题,那么要对问题进行答案的显示展示
+      // this.answerSelectorRef.showAnswers(
+      //   [
+      //     {
+      //       id: 'a1',
+      //       snippetIndex: Object.keys(this.snippetsDic)[2],
+      //       title:'A',
+      //       desc:'打印到快递单',
+      //       // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+      //       content:<div>
+      //         <div>哈哈</div>
+      //         <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+      //       </div>
+      //     },
+      //     {
+      //       id: 'a2',
+      //       snippetIndex: Object.keys(this.snippetsDic)[3],
+      //       title:'B',
+      //       desc:'打印到单独详单'
+      //     },
+      //     {
+      //       id: 'a3',
+      //       snippetIndex:Object.keys(this.snippetsDic)[4],
+      //       title:'C',
+      //       desc:'重新观看说明'
+      //     },
+      //     // {id:'a4'},
+      //     // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
+      //     // {id:'a9'}
+      //   ]
+      // )
     }
     if (snippet.redirectSnippetIndex)
     {
@@ -224,6 +311,8 @@ class InteractiveMovieScriptPlayer extends Component {
     {
       return '加载中';
     }
+    let interactingQuestionDom = this.state.interactingQuestionDom;
+
     return (
       <div className={classNames.main}>
         <div className={masked ? classNames.playerMasked : classNames.player}>
@@ -239,12 +328,13 @@ class InteractiveMovieScriptPlayer extends Component {
                               ref={e=>this.snippetPlayer=e}
           />
         </div>
-        <AnswerSelector ref={e=>this.answerSelectorRef = e}
-                        onSelectAnswer={e => {
-                          this.onSelectAnswer(e);
-                        }
-                        }
-        />
+        {interactingQuestionDom}
+        {/*<AnswerSelector ref={e=>this.answerSelectorRef = e}*/}
+        {/*                onSelectAnswer={e => {*/}
+        {/*                  this.onSelectAnswer(e);*/}
+        {/*                }*/}
+        {/*                }*/}
+        {/*/>*/}
       </div>
     )
   }

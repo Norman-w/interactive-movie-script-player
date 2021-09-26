@@ -3,9 +3,9 @@
   width: 100%;
   height: 100%;
   /*border: 1px solid red;*/
-  position: absolute;
-  top: 0;
-  left: 0;
+  /*position: absolute;*/
+  /*top: 0;*/
+  /*left: 0;*/
 
   display: flex;
   flex-direction: row;
@@ -13,6 +13,18 @@
   align-items: center;
 
   flex-wrap: wrap;
+  /*    动画 慢慢进入*/
+  animation: mainIn 600ms, ease infinite alternate;
+}
+@keyframes mainIn {
+  from {
+    transform: scale(0.1);
+    opacity: 0%;
+  }
+  to {
+    transform: scale(1);
+    opacity: 100%;
+  }
 }
 .node {
   user-select: none;
