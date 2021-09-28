@@ -132,9 +132,16 @@ class InteractiveMovieScriptPlayer extends Component {
       message.error('未能获取到作为入口的片段信息');
       return;
     }
-    this.setState({currentSnippet:first});
-    this.snippetPlayer.changeSnippet(first,true);
-    console.log('设置第一播放片段为:',first)
+    if(this.snippetPlayer)
+    {
+      this.setState({currentSnippet:first});
+      this.snippetPlayer.changeSnippet(first,true);
+      console.log('设置第一播放片段为:',first);
+    }
+    else
+    {
+      console.log('还没有获取到片段播放器');
+    }
   }
   //endregion
 
@@ -194,10 +201,10 @@ class InteractiveMovieScriptPlayer extends Component {
             title:'A',
             // desc:'',
             // content:<Button size={'large'} type={'primary'} danger>确认</Button>
-            // content:<div>
-            //   <div>哈哈</div>
-            //   <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
-            // </div>
+            content:<div>
+              <div>选项为图片</div>
+              <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+            </div>
           },
           {
             id: 'b',
@@ -310,31 +317,35 @@ class InteractiveMovieScriptPlayer extends Component {
 
   //region 渲染
   render() {
-    if (!this.state.currentSnippet)
+    let currentSnippet = {};
+    if (this.state.currentSnippet)
     {
-      return <div>未加载片段信息</div>;
+      currentSnippet = this.state.currentSnippet;
     }
-    let masked=this.state.currentSnippet.type==='transitions';
-    // console.log('渲染播放器,url是:',this.state.currentMovie);
-    if (!this.state || !this.state.currentSnippet)
-    {
-      return '加载中';
-    }
+    let masked=currentSnippet.type==='transitions';
     let interactingQuestionDom = this.state.interactingQuestionDom;
 
     return (
       <div className={classNames.main}>
         <div className={masked ? classNames.playerMasked : classNames.player}>
           <MovieSnippetPlayer
-                              movieId={this.state.currentSnippet.movieId}
+                              movieId={currentSnippet.movieId}
                               autoPlay={true}
-                              startTime={this.state.currentSnippet.startTime}
-                              endTime={this.state.currentSnippet.endTime}
-                              movieUrl={this.state.currentSnippet.movieUrl}
-                              snippet={this.state.currentSnippet}
+                              startTime={currentSnippet.startTime}
+                              endTime={currentSnippet.endTime}
+                              movieUrl={currentSnippet.movieUrl}
+                              snippet={currentSnippet}
                               onSnippetFinished={(e)=>{this.onSnippetFinished(e)}
                               }
-                              ref={e=>this.snippetPlayer=e}
+                              ref={e=>
+                              {
+                                if (e)
+                                {
+                                  console.log('设置当前页面播放器组件:',e);
+                                  this.snippetPlayer=e;
+                                }
+                              }
+                              }
           />
         </div>
         {interactingQuestionDom}
