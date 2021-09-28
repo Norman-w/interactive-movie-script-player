@@ -23,6 +23,7 @@ import InteractiveMovieScriptPlayer from "./InteractiveMovieScriptPlayer";
 import Splitter from "./Splitter";
 import ScriptEditor from "./ScriptEditor";
 import SnippetEditor from "./SnippetEditor";
+import JSONResult from "./utils/JSONResult";
 
 
 const {Step} = Steps;
@@ -59,6 +60,7 @@ class InteractiveMovieScriptEditor extends Component {
         }
         this.load();
     }
+    //region 在本地存储中,保存和读取文件,也可以改成把文件存在远程服务器,然后进行api下载.但是远程服务器需要执行逻辑
     save()
     {
       localStorage.setItem('movies',JSON.stringify(this.state.moviesSources));
@@ -78,7 +80,6 @@ class InteractiveMovieScriptEditor extends Component {
       }
       //endregion
     }
-
     //endregion
 
     //region 视频状态有变更 包括人的操作和视频主动发出来的时间变化之类的
@@ -375,7 +376,6 @@ class InteractiveMovieScriptEditor extends Component {
             movieUrl:this.state.currentMovie.movieUrl,
           startTime:currentSelectedNode,
           endTime:moreThanThisNodeMinNode,
-          duration:moreThanThisNodeMinNode-currentSelectedNode,
           redirect:false,
           redirectSnippetIndex:null,
             transitionSnippetIndex:null,
@@ -495,11 +495,7 @@ class InteractiveMovieScriptEditor extends Component {
       )
     }
     //endregion
-    //获取脚本下的片段集合
-    getSnippetsFromScript(script)
-    {
 
-    }
     render() {
         let movieUrl = this.state.currentMovie.movieUrl;
         let posterUrl = this.state.currentMovie.posterUrl;
@@ -573,7 +569,7 @@ class InteractiveMovieScriptEditor extends Component {
                                     </div>
                                 })
                             }
-
+                          <Button onClick={onClickAddMovieSourceBtn} style={{marginTop:20}} type={'primary'}>添加视频</Button>
                         </div>
                     </div>
                     <div id={'中间的工具栏'} className={classNames.midColumn}>
@@ -591,7 +587,22 @@ class InteractiveMovieScriptEditor extends Component {
                         <div id={'下方时间轴和按钮'} className={classNames.editorBottomLineContent}>
                             <div id={'编辑器内部'} className={classNames.editorContent}>
                                 <div id={'按钮集'} className={classNames.buttons}>
-                                    <Button onClick={onClickAddMovieSourceBtn}>添加视频</Button>
+                                  <Button onClick={()=>{
+                                    let md = Modal.info({
+                                      icon:null,
+                                      content:<JSONResult json={
+                                        // JSON.stringify(this.state.scripts)
+                                        this.state.scripts
+                                      }></JSONResult>,
+                                      closable:true,
+                                      maskClosable:true,
+                                      width:'100%',
+                                      okType:"ghost",
+                                      okOk:(e)=>{
+                                        md.destroy();
+                                      }
+                                    })
+                                  }}>查看脚本</Button>
                                     <Button onClick={()=>{localStorage.clear();message.success('缓存已清空');this.load()}}>清空缓存</Button>
                                     <div className={classNames.lineFlexRow}>
                                         <div>拖拽后自动播放</div>
@@ -659,6 +670,25 @@ class InteractiveMovieScriptEditor extends Component {
                                         return <div key={key} className={scriptClass}
                                                     onClick={()=>{onClickScript(key)}}
                                         >
+                                          <div className={classNames.deleteScriptBtn}
+                                               hidden={currentSelectScriptId!==key}
+                                               onClick={()=>{
+                                                 Modal.warn({
+                                                   title:'确认要删除此脚本吗?',
+                                                   okCancel:true,
+                                                   okText:'删除',
+                                                   cancelText:'取消',
+                                                   onOk:()=>
+                                                   {
+                                                     delete scripts[key];
+                                                     this.setState({scripts: scripts});
+                                                   }
+                                                 })
+                                               }}
+                                          >
+                                            删除
+                                          </div>
+
                                             <div id={'脚本标题'} className={classNames.scriptTitle}>{key}</div>
                                             <div id={'脚本副标题'} className={classNames.scriptSubTitle}>{obj.name}</div>
                                             <div id={'片段列表容器'} className={classNames.snippetListContent}>
@@ -704,7 +734,6 @@ class InteractiveMovieScriptEditor extends Component {
                                  onMouseLeave={()=>{this.setState({addScriptHover:false})}}
                             >+</div>
                         </div>
-
                     </div>
                 </div>
 

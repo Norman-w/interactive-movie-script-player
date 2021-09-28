@@ -9,7 +9,6 @@ export default class MovieScriptFactory {
           id:id,
           name:name,
           desc:desc,
-          duration:duration,
           usedFor:usedFor,
           movieUrl:url,
         posterUrl:poster,
@@ -30,9 +29,8 @@ export default class MovieScriptFactory {
                                     reWriteVoice,
                                     start,
                                     end,
-                                    duration,
                                     id) {
-      let param = {movie:movie,name:name,desc:desc,reWriteSubTitle:reWriteSubTitle,reWriteVoice:reWriteVoice,start:start,end:end,duration:duration,id:id};
+      let param = {movie:movie,name:name,desc:desc,reWriteSubTitle:reWriteSubTitle,reWriteVoice:reWriteVoice,start:start,end:end,id:id};
       if (!id)
       {
           param.id= new Date().getDate();

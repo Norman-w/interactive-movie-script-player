@@ -8,6 +8,7 @@ import {
 } from 'video-react';
 import "video-react/dist/video-react.css"; // import css
 import './video-react-rewrite.css';
+import {message} from "antd";
 //endregion
 
 class MovieSnippetPlayer extends Component {
@@ -96,6 +97,11 @@ class MovieSnippetPlayer extends Component {
   changeSnippet(snippet,autoPlay)
   {
     let pSnippet = snippet;
+    if (!snippet)
+    {
+      message.warn('无效的片段信息');
+      return;
+    }
     this.setState({
           snippet: pSnippet,
           startTime: pSnippet.startTime,

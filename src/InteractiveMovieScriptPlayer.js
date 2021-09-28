@@ -79,7 +79,7 @@ class InteractiveMovieScriptPlayer extends Component {
   //region 页面数据  state
   state =
     {
-      currentSnippet:{},
+      currentSnippet:null,
       //正在交互中的问题类型
       interactingQuestionDom:null,
     }
@@ -127,6 +127,11 @@ class InteractiveMovieScriptPlayer extends Component {
 
   componentDidMount() {
     let first = this.getFirstEntrySnippet();
+    if (!first)
+    {
+      message.error('未能获取到作为入口的片段信息');
+      return;
+    }
     this.setState({currentSnippet:first});
     this.snippetPlayer.changeSnippet(first,true);
     console.log('设置第一播放片段为:',first)
@@ -305,6 +310,10 @@ class InteractiveMovieScriptPlayer extends Component {
 
   //region 渲染
   render() {
+    if (!this.state.currentSnippet)
+    {
+      return <div>未加载片段信息</div>;
+    }
     let masked=this.state.currentSnippet.type==='transitions';
     // console.log('渲染播放器,url是:',this.state.currentMovie);
     if (!this.state || !this.state.currentSnippet)
