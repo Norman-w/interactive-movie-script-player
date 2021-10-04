@@ -149,10 +149,11 @@ class InteractiveMovieScriptPlayer extends Component {
 
   getFirstEntrySnippet()
   {
+    console.log('获取第一脚本视频')
     let keys = Object.keys(this.snippetsDic);
     for (let i = 0; i < keys.length; i++) {
       let current = this.snippetsDic[keys[i]];
-      if (current.type.indexOf('question') >=0)
+      if (current.type.indexOf('info') >=0)
       {
         return current;
       }
@@ -164,15 +165,16 @@ class InteractiveMovieScriptPlayer extends Component {
   //region 当播放器时间变更
   onSnippetFinished(snippet)
   {
-    // console.log('片段播放完毕,片段是:',snippet);
+    console.log('片段播放完毕,片段是:',snippet);
     if (snippet.type.indexOf('question')>=0) {
       //region 如果是需要输入手机号
-      if (snippet.index==='input.initMovieSet2.questionWithWaiter.inputMobile')
+      if (snippet.index.indexOf("setSenderMobile")>=0)
       {
         let senderMobileInputForm =<SenderMobileInputForm onSubmit={(e) => {
           // console.log(e);
           this.setState({interactingQuestionDom: null}, () => {
-                this.changeSnippet('selectPrintMode.initMovieSet1.questionWithWaiter.selectPrintMode');
+            //设置完了发货人的手机号以后,跳转到收件人手机号的  好的 剧本 ,然后 好的 剧本再跳转到 选择打印快递单模式
+                this.changeSnippet('setSenderMoile.initMovieSet3.info.right');
               }
           );
         }}
@@ -191,8 +193,11 @@ class InteractiveMovieScriptPlayer extends Component {
         return;
       }
       //endregion
+          //region 设置完毕手机号以后 的  好的  自动跳转到 选择打印方式
+          //setSenderMoile.initMovieSet3.info.right
+          //endregion
       //region 另外如果是需要选择如何打印商品详情
-      else if(snippet.index ==='selectPrintMode.initMovieSet1.questionWithWaiter.selectPrintMode')
+      else if(snippet.index ==='selectPrintMode.initMovieSet4.questionWithWaiter.selectPrintMode')
       {
         let answerOptions = [
           {
@@ -240,6 +245,8 @@ class InteractiveMovieScriptPlayer extends Component {
         )
       }
       //endregion
+      //region 其他的问题
+
       //这是个问题,那么要对问题进行答案的显示展示
       // this.answerSelectorRef.showAnswers(
       //   [
@@ -271,6 +278,8 @@ class InteractiveMovieScriptPlayer extends Component {
       //     // {id:'a9'}
       //   ]
       // )
+
+      //endregion
     }
     if (snippet.redirectSnippetIndex)
     {

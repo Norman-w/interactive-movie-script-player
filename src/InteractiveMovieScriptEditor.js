@@ -244,8 +244,29 @@ class InteractiveMovieScriptEditor extends Component {
     //endregion
     //region 添加视频素材
     onClickAddMovieSourceBtn() {
+
         this.player.load();
         let movieUrl = 'https://www.enni.group/file/testmovie/' + (this.state.moviesSources.length + 2) + '.MP4';
+        if(this.state.moviesSources.length === 0)
+        {
+            movieUrl = 'https://www.enni.group/qp/pdd/moviescriptplayer/src/1.introduce.mp4';
+        }
+        else if(this.state.moviesSources.length ===1)
+        {
+            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/2.setSenderMobile.mp4';
+        }
+        else if(this.state.moviesSources.length ===2)
+        {
+            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/feedback.right.mp4';
+        }
+        else if(this.state.moviesSources.length ===3)
+        {
+            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/3.selectPrintMode.mp4';
+        }
+        else if(this.state.moviesSources.length ===4)
+        {
+            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/4.moreThan5How.mp4';
+        }
         let moviePoster = '';//'https://www.enni.group/file/test2.png';
         let mf = new MovieScriptFactory();
         // console.log(this.initMovieState);
@@ -599,6 +620,7 @@ class InteractiveMovieScriptEditor extends Component {
                                       width:'100%',
                                       okType:"ghost",
                                       okOk:(e)=>{
+                                          console.log(JSON.stringify(this.state.scripts));
                                         md.destroy();
                                       }
                                     })

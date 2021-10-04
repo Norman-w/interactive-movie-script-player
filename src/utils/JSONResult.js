@@ -4,6 +4,7 @@ import JSONTree from 'react-json-tree';
 import theme from './JSONResultTheme';
 
 function JSONResult({ json }) {
+    console.log(JSON.stringify(json));
     return (
         <div className={styles.testResult}>
             <div className={styles.inner}>
