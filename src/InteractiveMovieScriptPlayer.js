@@ -153,7 +153,7 @@ class InteractiveMovieScriptPlayer extends Component {
     let keys = Object.keys(this.snippetsDic);
     for (let i = 0; i < keys.length; i++) {
       let current = this.snippetsDic[keys[i]];
-      if (current.type.indexOf('info') >=0)
+      if (current.type.indexOf('question') >=0)
       {
         return current;
       }
@@ -202,7 +202,7 @@ class InteractiveMovieScriptPlayer extends Component {
         let answerOptions = [
           {
             id: 'a',
-            snippetIndex: Object.keys(this.snippetsDic)[2],
+            snippetIndex: 'selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill',
             title:'A',
             // desc:'',
             // content:<Button size={'large'} type={'primary'} danger>确认</Button>
@@ -213,7 +213,7 @@ class InteractiveMovieScriptPlayer extends Component {
           },
           {
             id: 'b',
-            snippetIndex: Object.keys(this.snippetsDic)[3],
+            snippetIndex: 'selectPrintMode.initMovieSet5.info.smartChoice',
             title:'B',
             desc:'打印到单独详单'
           },
@@ -242,6 +242,48 @@ class InteractiveMovieScriptPlayer extends Component {
                 this.changeSnippet(snippet.transitionSnippetIndex);
               }
             }
+        )
+      }
+      //endregion
+      //region 提问  问用户要把大于5种商品的包裹  商品详情打印在哪里?
+      else if(snippet.index==='selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill')
+      {
+        //region 定义可选问题项
+        let answerOptions = [
+          {
+            id: 'a',
+            snippetIndex: 'selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill',
+            title:'使用面单纸',
+            // desc:'',
+            // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+            content:<div>
+              <div>将使用快递单作为商品详单,但快递单不具备自动切纸功能,可能会造成浪费哦</div>
+              {/*<img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>*/}
+            </div>
+          },
+          {
+            id: 'b',
+            snippetIndex: 'selectPrintMode.initMovieSet5.info.smartChoice',
+            title:'使用热敏纸',
+            desc:'将包商品种类大于5种的详单,打印在80毫米的热敏打印机上,这需要一台热敏打印机',
+          },
+        ];
+        //endregion
+        let selectMoreItemDetailDeviceDom=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
+          let id = answer.id;
+          let destAnswerSnippetIndex = answer.snippetIndex;
+          this.changeSnippet(destAnswerSnippetIndex);
+          this.setState({interactingQuestionDom:null})
+        }}/>
+        this.setState({interactingQuestionDom:selectMoreItemDetailDeviceDom}
+          ,()=>
+          {
+            //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
+            if (snippet.transitionSnippetIndex)
+            {
+              this.changeSnippet(snippet.transitionSnippetIndex);
+            }
+          }
         )
       }
       //endregion

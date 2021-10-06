@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Slider, Button, Switch, Steps, Modal, message} from 'antd';
+import {Input,Slider, Button, Switch, Steps, Modal, message} from 'antd';
 import classNames from './InteractiveMovieScriptEditor.module.css';
 import 'antd/dist/antd.css'
 //region  video-react的引用
@@ -625,6 +625,36 @@ class InteractiveMovieScriptEditor extends Component {
                                       }
                                     })
                                   }}>查看脚本</Button>
+                                  <Button onClick={
+                                    ()=> {
+                                      let inputValue = null;
+                                      let setJsonMd = Modal.info(
+                                        {
+                                          title:'输入要解析的json',
+                                          content:<Input onChange={(e)=>{
+                                            inputValue=e.target.value;
+                                            console.log('输入了内容:', e.target.value);
+                                          }}></Input>,
+                                          onOk:(e)=>
+                                          {
+                                            console.log('e是:',e);
+                                            let json = JSON.parse(inputValue);
+                                            if(!json || Object.keys(json).length<1)
+                                            {
+                                              message.error('输入的脚本json无效');
+                                              return;
+                                            }
+                                            else {
+                                              console.log('json是:', json);
+                                              this.setState({scripts:json});
+                                              this.save();
+                                              setJsonMd.destroy();
+                                            }
+                                          }
+                                        }
+                                      )
+                                    }
+                                  }>设置脚本</Button>
                                     <Button onClick={()=>{localStorage.clear();message.success('缓存已清空');this.load()}}>清空缓存</Button>
                                     <div className={classNames.lineFlexRow}>
                                         <div>拖拽后自动播放</div>
