@@ -153,7 +153,7 @@ class InteractiveMovieScriptPlayer extends Component {
     let keys = Object.keys(this.snippetsDic);
     for (let i = 0; i < keys.length; i++) {
       let current = this.snippetsDic[keys[i]];
-      if (current.type.indexOf('question') >=0)
+      if (current.type.indexOf('info') >=0)
       {
         return current;
       }
