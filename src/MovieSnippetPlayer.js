@@ -18,6 +18,7 @@ class MovieSnippetPlayer extends Component {
     endTime:null,
     movieUrl:null,
     movieId:null,
+    enableClickPlay:false,
   }
   constructor(props) {
     super(props);
@@ -57,6 +58,7 @@ class MovieSnippetPlayer extends Component {
           movieId:props.movieId,
           posterUrl:props.posterUrl,
           autoPlay:props.autoPlay,
+          enableClickPlay:props.enableClickPlay,
         }
       )
     }
@@ -79,6 +81,10 @@ class MovieSnippetPlayer extends Component {
   onClick(e)
   {
     // console.log('跳转到开头处并开始播放');
+    if (!this.state.enableClickPlay)
+    {
+      return;
+    }
     this.player.seek(this.state.startTime);
     this.player.play();
   }

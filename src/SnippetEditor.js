@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import classNames from './SnippetEditor.module.css'
-import {Radio, Input, Select, Button, InputNumber,Collapse} from "antd";
+import {Radio, Input, Select, Button, InputNumber,Collapse, Modal} from "antd";
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
 import 'antd/dist/antd.css';
 import {act} from "@testing-library/react";
@@ -102,6 +102,11 @@ class SnippetEditor extends Component {
     );
   }
   //endregion
+    //region 当小视频播放的时候要暂停大视频
+    onClickPauseBtn()
+    {
+    }
+    //endregion
     render() {
         let snippet = this.state.snippet;
         let movieId = this.state.movieId;
@@ -115,10 +120,12 @@ class SnippetEditor extends Component {
           return null;
         }
         let scriptList = utils.jsonField2Array(this.state.scripts);
+        let player = this.movieSnippetPlayerRef;
 
         return (
             <div className={classNames.main}>
               <MovieSnippetPlayer
+                  enableClickPlay={true}
                 autoPlay
                 movieUrl={movieUrl}
                 startTime={snippet.startTime}
@@ -230,13 +237,42 @@ class SnippetEditor extends Component {
                                           let oldSnippet = this.state.snippet;
                                           oldSnippet.redirectSnippetIndex = snippet.index;
                                           this.setState({snippet: oldSnippet});
+                                          if (this.movieSnippetPlayerRef)
+                                          {
+                                              this.movieSnippetPlayerRef.player.pause();
+                                              // console.log('点了小视频,大视频要暂停');
+                                              //region 点了一个视频以后,让视频弹出一个弹窗播放预览.
+                                              Modal.success(
+                                                  {
+                                                      width:1000,
+                                                      title:'',
+                                                      icon:null,
+                                                      maskClosable:true,
+                                                      content:
+                                                      <div>
+                                                          <div>
+                                                              索引:{snippet.index}    名称:{snippet.name}
+                                                          </div>
+                                                          <MovieSnippetPlayer enableClickPlay={true}
+                                                                              autoPlay={true}
+                                                                              movieUrl={snippet.movieUrl}
+                                                                              startTime={snippet.startTime}
+                                                                              endTime={snippet.endTime}
+                                                          />
+                                                      </div>
+                                                          ,
+                                                  }
+                                              )
+                                              //endregion
+                                          }
                                         }}
                             >
-                              <MovieSnippetPlayer
+                              <MovieSnippetPlayer id={'就当做一个图片的图标了.'} enableClickPlay={false}
                                 autoPlay={false}
                                 movieUrl={snippet.movieUrl}
                                 startTime={snippet.startTime}
-                                endTime={snippet.endTime}/>
+                                endTime={snippet.endTime}
+                              />
                             </div>
                             }
                           )
