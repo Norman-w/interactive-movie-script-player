@@ -407,27 +407,7 @@ class InteractiveMovieScriptEditor extends Component {
     showSnippetEditor(movieId,movieUrl,movieDuration, scriptId,newSnippet,mode)
     {
       // console.log('显示片段编辑器:', newSnippet);
-        //region 获取当前可用的过场视频集合
-        let transitionSnippets = [];
-        let allSnippets = [];
-        let scriptsKeys = Object.keys(this.state.scripts);
-        for (let i = 0; i < scriptsKeys.length; i++) {
-            let key = scriptsKeys[i];
-            let script = this.state.scripts[key];
-            let snippetsKeys = Object.keys(script.snippets)
-            for (let j in snippetsKeys)
-            {
-                let skk = snippetsKeys[j];
-                let snippet=script.snippets[skk];
-                if(snippet.type==='transitions')
-                {
-                    transitionSnippets.push(snippet);
-                }
-                allSnippets.push(snippet);
-            }
-        }
-        // console.log('可用过场集合', transitionSnippets, '可用所有片段:', allSnippets);
-        //endregion
+
       let that = this;
         let editorRef = null;
       let content = <SnippetEditor mode={mode}
@@ -454,9 +434,11 @@ class InteractiveMovieScriptEditor extends Component {
                                    }}
                                    ref={e=>editorRef=e}
                                    //可选的过场片段都有哪些
-                                   transitionSnippets={transitionSnippets}
+                                   // transitionSnippets={transitionSnippets}
                                    //所有的片段都有哪些,这些片段可以用来执行跳转
-                                   allSnippets={allSnippets}
+                                   // allSnippets={allSnippets}
+                                   //直接把当前的脚本内容的集合传递过去,这样的话,可以通过手风琴的方式查看要选择的过场视频
+                                   scripts={this.state.scripts}
       />;
         // console.log('即将显示新片段的编辑页面', newSnippet);
 

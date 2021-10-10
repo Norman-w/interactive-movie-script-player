@@ -25,6 +25,17 @@ class Utils {
 
         }
     }
+   jsonField2Array = function(jsonObj)
+  {
+    let ret = [];
+    let keys = Object.keys(jsonObj);
+    for (let i = 0; i < keys.length; i++) {
+      let key = keys[i];
+      let field = jsonObj[key];
+      ret.push(field);
+    }
+    return ret;
+  }
 }
 const utils=new Utils();
 export default utils;

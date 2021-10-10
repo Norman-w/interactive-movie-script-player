@@ -56,6 +56,11 @@
   width: 100%;
   /*border: 1px solid green;*/
 }
+/*脚本的片段的集合显示器折叠器*/
+.scriptsSnippetsList
+{
+  width: 100%;
+}
 .transitionsList
 {
   width: 100%;

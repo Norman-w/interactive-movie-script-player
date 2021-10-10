@@ -1,14 +1,23 @@
 import React, {Component} from 'react';
 import classNames from './SnippetEditor.module.css'
-import {Radio, Input, Select, Button, InputNumber} from "antd";
+import {Radio, Input, Select, Button, InputNumber,Collapse} from "antd";
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
 import 'antd/dist/antd.css';
 import {act} from "@testing-library/react";
+import utils from "./utils/utils";
+
 const {Option} = Select;
+const { Panel } = Collapse;
+
 /*2021年09月20日17:23:01
 已经实现了视频可以循环播放,接下来添加节点的时候,让节点可以选择播放完毕以后的动作
 问题类 播放完毕后播放等待视频等待交互,回答类 播放完毕后跳转到目标视频, 等待类 播放完毕后重复播放 中间有交互后跳出视频播放转到回答类逻辑
 snippetEditor可以继续进行细化了.各个片段的相关的信息 如时常,所属视频 所属脚本 开始时间结束时间 如果是问题类型可以选择现有的循环片段等.
+* */
+
+/*
+2021年10月06日22:32:45 下一步 让点击了可选择的过场或者要跳转等的视频上时候  当前的视频要暂停播放  然后播放点击的视频 弹窗出来
+*
 * */
 class SnippetEditor extends Component {
     state=
@@ -18,6 +27,7 @@ class SnippetEditor extends Component {
             movieUrl:'',
             scriptId:'',
             mode:'create',
+          scripts:{},
         }
         constructor(props) {
           super(props);
@@ -27,11 +37,10 @@ class SnippetEditor extends Component {
                 snippet:this.props.snippet,
                 movieId:this.props.movieId,
                 movieUrl:this.props.movieUrl,
-              movieDuration:this.props.movieDuration,
+                movieDuration:this.props.movieDuration,
                 scriptId:this.props.scriptId,
                 mode:this.props.mode,
-                transitionSnippets:this.props.transitionSnippets?this.props.transitionSnippets:[],
-                allSnippets:this.props.allSnippets?this.props.allSnippets:[],
+              scripts:this.props.scripts,
             });
         }
     getSnippetFullKey(snippet)
@@ -40,6 +49,33 @@ class SnippetEditor extends Component {
         console.log('编辑页面 返回脚本index', ret);
         return ret;
     }
+    //region 提取脚本中的指定类型的脚本的信息的dictionary
+  getSnippetListFromScript(typesArr)
+  {
+    //typesArr must be array;
+    //region 获取当前可用的过场视频集合
+    let retSnippet = [];
+    let scriptsKeys = Object.keys(this.state.scripts);
+    for (let i = 0; i < scriptsKeys.length; i++) {
+      let key = scriptsKeys[i];
+      let script = this.state.scripts[key];
+      let snippetsKeys = Object.keys(script.snippets)
+      for (let j in snippetsKeys)
+      {
+        let skk = snippetsKeys[j];
+        let snippet=script.snippets[skk];
+        // if(snippet.type==='transitions')
+        if(typesArr.indexOf(snippet.type))
+        {
+          retSnippet.push(snippet);
+        }
+      }
+    }
+    // console.log('可用过场集合', transitionSnippets, '可用所有片段:', allSnippets);
+    //endregion
+    return retSnippet;
+  }
+  //endregion
     //region 开始时间改变了
   onChangeStartTime(value)
   {
@@ -72,11 +108,13 @@ class SnippetEditor extends Component {
         let movieUrl = this.state.movieUrl;
         let movieDuration = this.state.movieDuration;
         let scriptId = this.state.scriptId;
-        let s = this.state.allSnippets;
+        let transitionsList = this.getSnippetListFromScript(['transitions']);
+        let canRedirectSnippetList = this.getSnippetListFromScript(['info','question','questionWithWaiter']);
         if (!snippet || ! movieId || !scriptId || !movieUrl)
         {
           return null;
         }
+        let scriptList = utils.jsonField2Array(this.state.scripts);
 
         return (
             <div className={classNames.main}>
@@ -171,34 +209,42 @@ class SnippetEditor extends Component {
                    hidden={this.state.snippet.type!=='questionWithWaiter'}
               >
                 <div>选择过场视频:</div>
-                <div className={classNames.transitionsList}>
-                    {
-                        s.map((item)=>{
-                            if (item.type!=='transitions')
+                  <Collapse accordion className={classNames.scriptsSnippetsList}>
+                  {
+                    scriptList.map((script, index)=>{
+                      let snippetsList = utils.jsonField2Array(script.snippets);
+                      return <Panel header={script.name} key={index}>
+                        {
+                          snippetsList.map((snippet, snippetIndex) => {
+                            if (snippet.id===this.state.snippet.id || snippet.type!=="transitions")
                             {
-                                return null;
+                              return null;
                             }
                             let c = classNames.transition;
-                            if (this.state.snippet.transitionSnippetIndex === item.index)
+                            if (this.state.snippet.redirectSnippetIndex === snippet.index)
                             {
-                                c = classNames.transitionSelected;
+                              c = classNames.transitionSelected;
                             }
-                            return <div key={item.index} className={c}
+                            return <div key={'transitions'+snippet.scriptId+snippet.movieId+snippet.id} className={c}
                                         onClick={()=>{
-                                            let oldSnippet = this.state.snippet;
-                                            oldSnippet.transitionSnippetIndex = item.index;
-                                            this.setState({snippet: oldSnippet});
+                                          let oldSnippet = this.state.snippet;
+                                          oldSnippet.redirectSnippetIndex = snippet.index;
+                                          this.setState({snippet: oldSnippet});
                                         }}
                             >
-                                <MovieSnippetPlayer
-                                    autoPlay={false}
-                                    movieUrl={item.movieUrl}
-                                    startTime={item.startTime}
-                                    endTime={item.endTime}/>
+                              <MovieSnippetPlayer
+                                autoPlay={false}
+                                movieUrl={snippet.movieUrl}
+                                startTime={snippet.startTime}
+                                endTime={snippet.endTime}/>
                             </div>
-                        })
-                    }
-                </div>
+                            }
+                          )
+                        }
+                      </Panel>
+                    })
+                  }
+                  </Collapse>
               </div>
 
               <div
@@ -224,7 +270,7 @@ class SnippetEditor extends Component {
                 <div>选择将要跳转的目标视频:</div>
                 <div className={classNames.transitionsList}>
                     {
-                        s.map((item)=>{
+                      canRedirectSnippetList.map((item)=>{
                             if (item.id===this.state.snippet.id)
                             {
                                 return null;
