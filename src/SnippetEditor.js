@@ -107,6 +107,41 @@ class SnippetEditor extends Component {
     {
     }
     //endregion
+    //region 预览小图标中的视频
+    preView(snippet)
+    {
+        //region 暂停主视频并开启预览
+        if (this.movieSnippetPlayerRef)
+        {
+            this.movieSnippetPlayerRef.player.pause();
+            // console.log('点了小视频,大视频要暂停');
+            //region 点了一个视频以后,让视频弹出一个弹窗播放预览.
+            Modal.success(
+                {
+                    width:1000,
+                    title:'',
+                    icon:null,
+                    maskClosable:true,
+                    content:
+                        <div>
+                            <div>
+                                索引:{snippet.index}    名称:{snippet.name}
+                            </div>
+                            <MovieSnippetPlayer enableClickPlay={true}
+                                                autoPlay={true}
+                                                movieUrl={snippet.movieUrl}
+                                                startTime={snippet.startTime}
+                                                endTime={snippet.endTime}
+                            />
+                        </div>
+                    ,
+                }
+            )
+            //endregion
+        }
+        //endregion
+    }
+    //endregion
     render() {
         let snippet = this.state.snippet;
         let movieId = this.state.movieId;
@@ -124,6 +159,7 @@ class SnippetEditor extends Component {
 
         return (
             <div className={classNames.main}>
+                <div>{snippet.index}</div>
               <MovieSnippetPlayer
                   enableClickPlay={true}
                 autoPlay
@@ -237,34 +273,7 @@ class SnippetEditor extends Component {
                                           let oldSnippet = this.state.snippet;
                                           oldSnippet.redirectSnippetIndex = snippet.index;
                                           this.setState({snippet: oldSnippet});
-                                          if (this.movieSnippetPlayerRef)
-                                          {
-                                              this.movieSnippetPlayerRef.player.pause();
-                                              // console.log('点了小视频,大视频要暂停');
-                                              //region 点了一个视频以后,让视频弹出一个弹窗播放预览.
-                                              Modal.success(
-                                                  {
-                                                      width:1000,
-                                                      title:'',
-                                                      icon:null,
-                                                      maskClosable:true,
-                                                      content:
-                                                      <div>
-                                                          <div>
-                                                              索引:{snippet.index}    名称:{snippet.name}
-                                                          </div>
-                                                          <MovieSnippetPlayer enableClickPlay={true}
-                                                                              autoPlay={true}
-                                                                              movieUrl={snippet.movieUrl}
-                                                                              startTime={snippet.startTime}
-                                                                              endTime={snippet.endTime}
-                                                          />
-                                                      </div>
-                                                          ,
-                                                  }
-                                              )
-                                              //endregion
-                                          }
+                                            this.preView(snippet);
                                         }}
                             >
                               <MovieSnippetPlayer id={'就当做一个图片的图标了.'} enableClickPlay={false}
@@ -304,34 +313,49 @@ class SnippetEditor extends Component {
                    hidden={!this.state.snippet.redirect || this.state.snippet.type!=='info'}
               >
                 <div>选择将要跳转的目标视频:</div>
-                <div className={classNames.transitionsList}>
-                    {
-                      canRedirectSnippetList.map((item)=>{
-                            if (item.id===this.state.snippet.id)
-                            {
-                                return null;
-                            }
-                            let c = classNames.transition;
-                            if (this.state.snippet.redirectSnippetIndex === item.index)
-                            {
-                                c = classNames.transitionSelected;
-                            }
-                            return <div key={'all'+item.scriptId+item.movieId+item.id} className={c}
-                                        onClick={()=>{
-                                            let oldSnippet = this.state.snippet;
-                                            oldSnippet.redirectSnippetIndex = item.index;
-                                            this.setState({snippet: oldSnippet});
-                                        }}
-                            >
-                                <MovieSnippetPlayer
-                                    autoPlay={false}
-                                    movieUrl={item.movieUrl}
-                                    startTime={item.startTime}
-                                    endTime={item.endTime}/>
-                            </div>
-                        })
-                    }
-                </div>
+                  <Collapse accordion className={classNames.scriptsSnippetsList}>
+                      {
+                          scriptList.map((script, index)=>{
+                              let snippetsList = utils.jsonField2Array(script.snippets);
+                              return <Panel header={script.name} key={index}>
+                                  {
+                                      snippetsList.map((snippet, snippetIndex) => {
+                                              if (snippet.id===this.state.snippet.id || snippet.type==="transitions")
+                                              {
+                                                  return null;
+                                              }
+                                              let c = classNames.transition;
+                                              if (this.state.snippet.redirectSnippetIndex === snippet.index)
+                                              {
+                                                  c = classNames.transitionSelected;
+                                              }
+                                          if (snippet.id===this.state.snippet.id)
+                                          {
+                                              return null;
+                                          }
+                                              return <div key={'all'+snippet.scriptId+snippet.movieId+snippet.id} className={c}
+                                                          onClick={()=>{
+                                                              let oldSnippet = this.state.snippet;
+                                                              oldSnippet.redirectSnippetIndex = snippet.index;
+                                                              this.setState({snippet: oldSnippet});
+                                                              this.preView(snippet);
+                                                          }}
+                                              >
+                                                  <MovieSnippetPlayer id={'就当做一个图片的图标了.'} enableClickPlay={false}
+                                                                      autoPlay={false}
+                                                                      movieUrl={snippet.movieUrl}
+                                                                      startTime={snippet.startTime}
+                                                                      endTime={snippet.endTime}
+                                                  />
+                                              </div>
+                                          }
+                                      )
+                                  }
+                              </Panel>
+                          })
+                      }
+                  </Collapse>
+
               </div>
                 <div id={'删除行'} hidden={this.state.mode==='create'} style={{marginTop:'18px'}}><Button danger onClick={this.props.onDelete.bind(this)}>删除</Button></div>
             </div>
