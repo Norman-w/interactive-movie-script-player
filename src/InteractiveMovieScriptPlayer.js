@@ -153,7 +153,11 @@ class InteractiveMovieScriptPlayer extends Component {
     let keys = Object.keys(this.snippetsDic);
     for (let i = 0; i < keys.length; i++) {
       let current = this.snippetsDic[keys[i]];
-      if (current.type.indexOf('info') >=0)
+      // if (current.type.indexOf('info') >=0)
+      // {
+      //   return current;
+      // }
+      if (current.index.indexOf('right') >=0)
       {
         return current;
       }
@@ -166,6 +170,7 @@ class InteractiveMovieScriptPlayer extends Component {
   onSnippetFinished(snippet)
   {
     console.log('片段播放完毕,片段是:',snippet);
+    //region 如果视频需要交互 展示交互页面
     if (snippet.type.indexOf('question')>=0) {
       //region 如果是需要输入手机号
       if (snippet.index.indexOf("setSenderMobile")>=0)
@@ -193,7 +198,7 @@ class InteractiveMovieScriptPlayer extends Component {
         return;
       }
       //endregion
-          //region 设置完毕手机号以后 的  好的  自动跳转到 选择打印方式
+      //region 设置完毕手机号以后 的  好的  自动跳转到 选择打印方式
           //setSenderMoile.initMovieSet3.info.right
           //endregion
       //region 另外如果是需要选择如何打印商品详情
@@ -287,6 +292,55 @@ class InteractiveMovieScriptPlayer extends Component {
         )
       }
       //endregion
+      //region 如果需要用户反馈有没有或者使用不使用80毫米热敏打印机
+      else if(snippet.index === 'deviceInfo.initMovieSet6.questionWithWaiter.pcandwaybillprinter')
+      {
+        //region 定义可选问题
+        let answerOptions = [
+          {
+            id:'a',
+            snippetIndex: '',
+            title:'已准备好',
+            desc:'打印机和电脑已经正确连接并可以使用'
+          },
+          {
+            id:'b',
+            snippetIndex: 'deviceInfo.initMovieSet6.info.giftPrinter',
+            title:'需要赠送',
+            desc:'我需要速配赠送打印机',
+          },
+          {
+            id:'c',
+            snippetIndex: '',
+            title: '不需要',
+            desc: '我不需要打印商品清单,也不使用后置打单功能',
+          },
+          {
+            id:'d',
+            snippetIndex: '',
+            title:'什么是后置打单?',
+            desc:'后置打单好处多,点击观看后置打单功能的说明',
+          }
+        ];
+        //endregion
+        let selectHas80PrinterDom=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
+          let id = answer.id;
+          let destAnswerSnippetIndex = answer.snippetIndex;
+          this.changeSnippet(destAnswerSnippetIndex);
+          this.setState({interactingQuestionDom:null})
+        }}/>
+        this.setState({interactingQuestionDom:selectHas80PrinterDom}
+            ,()=>
+            {
+              //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
+              if (snippet.transitionSnippetIndex)
+              {
+                this.changeSnippet(snippet.transitionSnippetIndex);
+              }
+            }
+        )
+      }
+      //endregion
       //region 其他的问题
 
       //这是个问题,那么要对问题进行答案的显示展示
@@ -323,21 +377,28 @@ class InteractiveMovieScriptPlayer extends Component {
 
       //endregion
     }
+    //endregion
+    //如果当前视频不用动作直接跳转到下一个视频的话,直接跳转
     if (snippet.redirectSnippetIndex)
     {
       this.changeSnippet(snippet.redirectSnippetIndex);
       return;
     }
+    //endregion
+        //region 如果当前视频播放完毕后需要播放过场视频的话,转换到播放过场视频
     else if (snippet.transitionSnippetIndex)
     {
       this.changeSnippet(snippet.transitionSnippetIndex);
       return;
     }
+    //endregion
+        //region 如果当前视频是过场动画,直接进行重播
     else if(snippet.type==='transitions')
     {
       this.snippetPlayer.rePlay();
       return;
     }
+    //endregion
   }
   //endregion
 

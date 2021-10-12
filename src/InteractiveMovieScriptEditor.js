@@ -24,6 +24,7 @@ import Splitter from "./Splitter";
 import ScriptEditor from "./ScriptEditor";
 import SnippetEditor from "./SnippetEditor";
 import JSONResult from "./utils/JSONResult";
+import utils from "./utils/utils";
 
 
 const {Step} = Steps;
@@ -63,8 +64,8 @@ class InteractiveMovieScriptEditor extends Component {
     //region 在本地存储中,保存和读取文件,也可以改成把文件存在远程服务器,然后进行api下载.但是远程服务器需要执行逻辑
     save()
     {
-      localStorage.setItem('movies',JSON.stringify(this.state.moviesSources));
-      localStorage.setItem('scripts',JSON.stringify(this.state.scripts));
+      // localStorage.setItem('movies',JSON.stringify(this.state.moviesSources));
+      // localStorage.setItem('scripts',JSON.stringify(this.state.scripts));
     }
     load()
     {
@@ -266,6 +267,10 @@ class InteractiveMovieScriptEditor extends Component {
         else if(this.state.moviesSources.length ===4)
         {
             movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/4.moreThan5How.mp4';
+        }
+        else if(this.state.moviesSources.length ===5)
+        {
+            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/5.devicePrepare.mp4';
         }
         let moviePoster = '';//'https://www.enni.group/file/test2.png';
         let mf = new MovieScriptFactory();
@@ -590,6 +595,78 @@ class InteractiveMovieScriptEditor extends Component {
                         <div id={'下方时间轴和按钮'} className={classNames.editorBottomLineContent}>
                             <div id={'编辑器内部'} className={classNames.editorContent}>
                                 <div id={'按钮集'} className={classNames.buttons}>
+                                    <Button onClick={async()=>{
+                                        let scriptsJson = JSON.stringify(this.state.scripts);
+                                        let srcJson = JSON.stringify(this.state.moviesSources);
+                                        utils.doPost({
+                                            api:'setting.save',
+                                            params:
+                                                {
+                                                    settingJson:encodeURIComponent(scriptsJson),
+                                                    settingName:'scripts',
+                                                },
+                                            success:(ret)=>
+                                            {
+                                                message.success('保存脚本信息成功');
+                                            }
+                                        })
+                                        utils.doPost({
+                                            api:'setting.save',
+                                            params:
+                                                {
+                                                    settingJson:encodeURIComponent(srcJson),
+                                                    settingName:'movieResources',
+                                                },
+                                            success:(ret)=>
+                                            {
+                                                message.success('保存片源信息成功');
+                                            }
+                                        })
+                                    }}>
+                                        云保存
+                                    </Button>
+                                    <Button onClick={async()=>{
+                                        utils.doPost({
+                                            api:'setting.load',
+                                            params:
+                                                {
+                                                    settingName:'scripts',
+                                                },
+                                            success:(ret)=>
+                                            {
+                                                if (ret && ret.SettingJson)
+                                                {
+                                                    let retJson = decodeURIComponent(ret.SettingJson);
+                                                    let jsonObj = JSON.parse(retJson);
+                                                    this.setState({scripts: jsonObj});
+                                                    message.success('加载云端脚本设置成功');
+                                                }
+                                                console.log('执行读取请求成功:', ret);
+                                            }
+                                        })
+                                        //region 加载保存的视频资源脚本
+                                        utils.doPost({
+                                            api:'setting.load',
+                                            params:
+                                                {
+                                                    settingName:'movieResources',
+                                                },
+                                            success:(ret)=>
+                                            {
+                                                if (ret && ret.SettingJson)
+                                                {
+                                                    let retJson = decodeURIComponent(ret.SettingJson);
+                                                    let jsonObj = JSON.parse(retJson);
+                                                    this.setState({moviesSources: jsonObj});
+                                                    message.success('加载云端电影片源设置成功');
+                                                }
+                                                console.log('执行读取请求成功:', ret);
+                                            }
+                                        })
+                                        //endregion
+                                    }}>
+                                        云读取
+                                    </Button>
                                   <Button onClick={()=>{
                                     let md = Modal.info({
                                       icon:null,
