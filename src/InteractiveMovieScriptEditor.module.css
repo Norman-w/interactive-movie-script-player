@@ -189,8 +189,8 @@
 {
     composes: scriptTitle;
     font-size: 7px;
-    color: lightgray;
-    text-shadow: 0 0 3px black;
+    color: #203c03;
+    text-shadow: 0 0 3px #e2a7ec;
 }
 .scriptCurrent
 {
@@ -253,8 +253,10 @@
 .snippetTitle
 {
     composes: scriptTitle;
+  color: #09217c;
 }
 .snippetSubTitle
 {
     composes: scriptSubTitle;
+  color: #09217c;
 }

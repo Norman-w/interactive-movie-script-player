@@ -59,7 +59,8 @@ class InteractiveMovieScriptEditor extends Component {
         if (this.player) {
             this.player.subscribeToStateChange(this.handleStateChange.bind(this));
         }
-        this.load();
+        // this.load();
+      this.onClickLoadFromCloudBtn();
     }
     //region 在本地存储中,保存和读取文件,也可以改成把文件存在远程服务器,然后进行api下载.但是远程服务器需要执行逻辑
     save()
@@ -220,6 +221,7 @@ class InteractiveMovieScriptEditor extends Component {
     viewPlayer = null;
 
     onClickPreViewBtn() {
+      console.log('点击预览按钮,将要进行脚本的预览,给定的scripts是:', this.state.scripts);
         if (!this.viewPlayer) {
             this.viewPlayer = <InteractiveMovieScriptPlayer scripts={this.state.scripts}/>;
         }
@@ -402,7 +404,7 @@ class InteractiveMovieScriptEditor extends Component {
             movieUrl:this.state.currentMovie.movieUrl,
           startTime:currentSelectedNode,
           endTime:moreThanThisNodeMinNode,
-          redirect:false,
+          actionAtEnd:'none',
           redirectSnippetIndex:null,
             transitionSnippetIndex:null,
             scriptId:scriptId,
@@ -503,8 +505,79 @@ class InteractiveMovieScriptEditor extends Component {
       )
     }
     //endregion
+  //region  在远端保存和获取设置
+  async onClickSave2CloudBtn(){
+  let scriptsJson = JSON.stringify(this.state.scripts);
+  let srcJson = JSON.stringify(this.state.moviesSources);
+  utils.doPost({
+                 api:'setting.save',
+                 params:
+                   {
+                     settingJson:encodeURIComponent(scriptsJson),
+  settingName:'scripts',
+},
+success:(ret)=>
+{
+  message.success('保存脚本信息成功');
+}
+})
+utils.doPost({
+  api:'setting.save',
+  params:
+    {
+      settingJson:encodeURIComponent(srcJson),
+      settingName:'movieResources',
+    },
+  success:(ret)=>
+  {
+    message.success('保存片源信息成功');
+  }
+})
+}
+  async onClickLoadFromCloudBtn(){
+  utils.doPost({
+                 api:'setting.load',
+                 params:
+                   {
+                     settingName:'scripts',
+                   },
+                 success:(ret)=>
+{
+  if (ret && ret.SettingJson)
+{
+  let retJson = decodeURIComponent(ret.SettingJson);
+  let jsonObj = JSON.parse(retJson);
+  this.setState({scripts: jsonObj});
+  message.success('加载云端脚本设置成功');
+}
+console.log('执行读取请求成功:', ret);
+}
+})
+//region 加载保存的视频资源脚本
+utils.doPost({
+  api:'setting.load',
+  params:
+    {
+      settingName:'movieResources',
+    },
+  success:(ret)=>
+  {
+    if (ret && ret.SettingJson)
+    {
+      let retJson = decodeURIComponent(ret.SettingJson);
+      let jsonObj = JSON.parse(retJson);
+      this.setState({moviesSources: jsonObj});
+      message.success('加载云端电影片源设置成功');
+    }
+    console.log('执行读取请求成功:', ret);
+  }
+})
+//endregion
+}
+  //endregion
 
     render() {
+      //region 变量定义和绑定
         let movieUrl = this.state.currentMovie.movieUrl;
         let posterUrl = this.state.currentMovie.posterUrl;
         let duration = this.state.currentMovie.duration;
@@ -531,6 +604,7 @@ class InteractiveMovieScriptEditor extends Component {
             // return ''+sec+'.'+mil;
             return sec;
         }
+        //endregion
         return (
             <div className={classNames.main}>
                 <div className={classNames.playerContent}>
@@ -595,76 +669,10 @@ class InteractiveMovieScriptEditor extends Component {
                         <div id={'下方时间轴和按钮'} className={classNames.editorBottomLineContent}>
                             <div id={'编辑器内部'} className={classNames.editorContent}>
                                 <div id={'按钮集'} className={classNames.buttons}>
-                                    <Button onClick={async()=>{
-                                        let scriptsJson = JSON.stringify(this.state.scripts);
-                                        let srcJson = JSON.stringify(this.state.moviesSources);
-                                        utils.doPost({
-                                            api:'setting.save',
-                                            params:
-                                                {
-                                                    settingJson:encodeURIComponent(scriptsJson),
-                                                    settingName:'scripts',
-                                                },
-                                            success:(ret)=>
-                                            {
-                                                message.success('保存脚本信息成功');
-                                            }
-                                        })
-                                        utils.doPost({
-                                            api:'setting.save',
-                                            params:
-                                                {
-                                                    settingJson:encodeURIComponent(srcJson),
-                                                    settingName:'movieResources',
-                                                },
-                                            success:(ret)=>
-                                            {
-                                                message.success('保存片源信息成功');
-                                            }
-                                        })
-                                    }}>
+                                    <Button onClick={this.onClickSave2CloudBtn.bind(this)}>
                                         云保存
                                     </Button>
-                                    <Button onClick={async()=>{
-                                        utils.doPost({
-                                            api:'setting.load',
-                                            params:
-                                                {
-                                                    settingName:'scripts',
-                                                },
-                                            success:(ret)=>
-                                            {
-                                                if (ret && ret.SettingJson)
-                                                {
-                                                    let retJson = decodeURIComponent(ret.SettingJson);
-                                                    let jsonObj = JSON.parse(retJson);
-                                                    this.setState({scripts: jsonObj});
-                                                    message.success('加载云端脚本设置成功');
-                                                }
-                                                console.log('执行读取请求成功:', ret);
-                                            }
-                                        })
-                                        //region 加载保存的视频资源脚本
-                                        utils.doPost({
-                                            api:'setting.load',
-                                            params:
-                                                {
-                                                    settingName:'movieResources',
-                                                },
-                                            success:(ret)=>
-                                            {
-                                                if (ret && ret.SettingJson)
-                                                {
-                                                    let retJson = decodeURIComponent(ret.SettingJson);
-                                                    let jsonObj = JSON.parse(retJson);
-                                                    this.setState({moviesSources: jsonObj});
-                                                    message.success('加载云端电影片源设置成功');
-                                                }
-                                                console.log('执行读取请求成功:', ret);
-                                            }
-                                        })
-                                        //endregion
-                                    }}>
+                                    <Button onClick={this.onClickLoadFromCloudBtn.bind(this)}>
                                         云读取
                                     </Button>
                                   <Button onClick={()=>{

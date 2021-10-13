@@ -131,3 +131,45 @@
   max-height: 100%;
   padding: 5px;
 }
+
+
+/*对脚本的重播 跳过等按钮  通常建议是在调试的时候使用 让视频直接跳到开头或者结尾*/
+.snippetControlPanel
+{
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 20%;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  /*border: 1px solid blue;*/
+}
+.skipBtn
+{
+  width: 50px;
+  height: 50px;
+  border-radius: 30px;
+  box-shadow: 0 0 3px 2px slateblue;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+}
+.rePlayBtn
+{
+  width: 50px;
+  height: 50px;
+  border-radius: 30px;
+  box-shadow: 0 0 3px 2px salmon;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  user-select: none;
+  cursor: pointer;
+}

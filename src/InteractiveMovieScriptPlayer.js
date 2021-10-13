@@ -80,6 +80,7 @@ class InteractiveMovieScriptPlayer extends Component {
   state =
     {
       currentSnippet:null,
+      lastQuestionSnippet:null,
       //正在交互中的问题类型
       interactingQuestionDom:null,
     }
@@ -91,10 +92,14 @@ class InteractiveMovieScriptPlayer extends Component {
   //region  构造函数
   constructor(props) {
     super(props);
-    // console.log('当前InteractiveMovieScriptPlayer的构造函数给入的参数是:', this.props);
+    console.log('当前InteractiveMovieScriptPlayer的构造函数给入的参数是:', this.props);
     this.movieResources = this.props.movieResources;
     this.scripts = this.props.scripts;
-    let scriptsKeys = Object.keys(this.scripts);
+    this.fillScriptsDic(this.scripts);
+  }
+  fillScriptsDic(scripts)
+  {
+    let scriptsKeys = Object.keys(scripts);
     for (let i = 0; i < scriptsKeys.length; i++) {
       let scriptKey = scriptsKeys[i];
       let script = this.scripts[scriptKey];
@@ -150,6 +155,7 @@ class InteractiveMovieScriptPlayer extends Component {
   getFirstEntrySnippet()
   {
     console.log('获取第一脚本视频')
+    let ret = null;
     let keys = Object.keys(this.snippetsDic);
     for (let i = 0; i < keys.length; i++) {
       let current = this.snippetsDic[keys[i]];
@@ -157,244 +163,256 @@ class InteractiveMovieScriptPlayer extends Component {
       // {
       //   return current;
       // }
-      if (current.index.indexOf('right') >=0)
+      // console.log(current.index);
+      // if (current.index.indexOf('pcand') >=0)
+      if(current.index.indexOf('introduce.initMovieSet1.info.introduce')>=0)
       {
-        return current;
+        console.log('index 包含', current.index)
+        ret = current;
+        break;
       }
     }
-    return null;
+
+    console.log('获取到第一脚本视频:',ret)
+    return ret;
   }
   //endregion
-
-  //region 当播放器时间变更
-  onSnippetFinished(snippet)
+  //region 根据脚本,返回脚本所需要的交互页面dom
+  getInteractionDom(snippet)
   {
-    console.log('片段播放完毕,片段是:',snippet);
-    //region 如果视频需要交互 展示交互页面
-    if (snippet.type.indexOf('question')>=0) {
-      //region 如果是需要输入手机号
-      if (snippet.index.indexOf("setSenderMobile")>=0)
-      {
-        let senderMobileInputForm =<SenderMobileInputForm onSubmit={(e) => {
-          // console.log(e);
-          this.setState({interactingQuestionDom: null}, () => {
+    //region 如果是需要输入手机号
+    if (snippet.index.indexOf("setSenderMobile")>=0)
+    {
+      let senderMobileInputForm =<SenderMobileInputForm onSubmit={(e) => {
+        // console.log(e);
+        this.setState({interactingQuestionDom: null}, () => {
             //设置完了发货人的手机号以后,跳转到收件人手机号的  好的 剧本 ,然后 好的 剧本再跳转到 选择打印快递单模式
-                this.changeSnippet('setSenderMoile.initMovieSet3.info.right');
-              }
-          );
-        }}
-        />;
-        //如果当前的脚本是让输入手机号码,构造完了设置手机号的dom以后 显示在播放器的上层
-        this.setState({interactingQuestionDom:senderMobileInputForm}
-            ,()=>
-            {
-              //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
-              if (snippet.transitionSnippetIndex)
-              {
-                this.changeSnippet(snippet.transitionSnippetIndex);
-              }
-            }
-        )
-        return;
-      }
+            this.changeSnippet('setSenderMoile.initMovieSet3.info.right');
+          }
+        );
+      }}
+      />;
+      return senderMobileInputForm;
+    }
       //endregion
       //region 设置完毕手机号以后 的  好的  自动跳转到 选择打印方式
-          //setSenderMoile.initMovieSet3.info.right
-          //endregion
-      //region 另外如果是需要选择如何打印商品详情
-      else if(snippet.index ==='selectPrintMode.initMovieSet4.questionWithWaiter.selectPrintMode')
-      {
-        let answerOptions = [
-          {
-            id: 'a',
-            snippetIndex: 'selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill',
-            title:'A',
-            // desc:'',
-            // content:<Button size={'large'} type={'primary'} danger>确认</Button>
-            content:<div>
-              <div>选项为图片</div>
-              <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
-            </div>
-          },
-          {
-            id: 'b',
-            snippetIndex: 'selectPrintMode.initMovieSet5.info.smartChoice',
-            title:'B',
-            desc:'打印到单独详单'
-          },
-          // {
-          //   id: 'c',
-          //   snippetIndex:Object.keys(this.snippetsDic)[4],
-          //   title:'C',
-          //   desc:''
-          // },
-          // {id:'a4'},
-          // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
-          // {id:'a9'}
-        ];
-        let selectPrintModeForm=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
-          let id = answer.id;
-          let destAnswerSnippetIndex = answer.snippetIndex;
-          this.changeSnippet(destAnswerSnippetIndex);
-          this.setState({interactingQuestionDom:null})
-        }}/>
-        this.setState({interactingQuestionDom:selectPrintModeForm}
-            ,()=>
-            {
-              //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
-              if (snippet.transitionSnippetIndex)
-              {
-                this.changeSnippet(snippet.transitionSnippetIndex);
-              }
-            }
-        )
-      }
+      //setSenderMoile.initMovieSet3.info.right
       //endregion
-      //region 提问  问用户要把大于5种商品的包裹  商品详情打印在哪里?
-      else if(snippet.index==='selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill')
-      {
-        //region 定义可选问题项
-        let answerOptions = [
-          {
-            id: 'a',
-            snippetIndex: 'selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill',
-            title:'使用面单纸',
-            // desc:'',
-            // content:<Button size={'large'} type={'primary'} danger>确认</Button>
-            content:<div>
-              <div>将使用快递单作为商品详单,但快递单不具备自动切纸功能,可能会造成浪费哦</div>
-              {/*<img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>*/}
-            </div>
-          },
-          {
-            id: 'b',
-            snippetIndex: 'selectPrintMode.initMovieSet5.info.smartChoice',
-            title:'使用热敏纸',
-            desc:'将包商品种类大于5种的详单,打印在80毫米的热敏打印机上,这需要一台热敏打印机',
-          },
-        ];
-        //endregion
-        let selectMoreItemDetailDeviceDom=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
-          let id = answer.id;
-          let destAnswerSnippetIndex = answer.snippetIndex;
-          this.changeSnippet(destAnswerSnippetIndex);
-          this.setState({interactingQuestionDom:null})
-        }}/>
-        this.setState({interactingQuestionDom:selectMoreItemDetailDeviceDom}
-          ,()=>
-          {
-            //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
-            if (snippet.transitionSnippetIndex)
-            {
-              this.changeSnippet(snippet.transitionSnippetIndex);
-            }
-          }
-        )
-      }
+    //region 另外如果是需要选择如何打印商品详情
+    else if(snippet.index ==='selectPrintMode.initMovieSet4.questionWithWaiter.selectPrintMode')
+    {
+      let answerOptions = [
+        {
+          id: 'a',
+          snippetIndex: 'selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill',
+          title:'A',
+          // desc:'',
+          // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+          content:<div>
+            <div>选项为图片</div>
+            <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+          </div>
+        },
+        {
+          id: 'b',
+          snippetIndex: 'selectPrintMode.initMovieSet5.info.smartChoice',
+          title:'B',
+          desc:'打印到单独详单'
+        },
+        // {
+        //   id: 'c',
+        //   snippetIndex:Object.keys(this.snippetsDic)[4],
+        //   title:'C',
+        //   desc:''
+        // },
+        // {id:'a4'},
+        // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
+        // {id:'a9'}
+      ];
+      let selectPrintModeForm=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
+        let id = answer.id;
+        let destAnswerSnippetIndex = answer.snippetIndex;
+        this.changeSnippet(destAnswerSnippetIndex);
+        this.setState({interactingQuestionDom:null})
+      }}/>
+      return selectPrintModeForm;
+    }
       //endregion
-      //region 如果需要用户反馈有没有或者使用不使用80毫米热敏打印机
-      else if(snippet.index === 'deviceInfo.initMovieSet6.questionWithWaiter.pcandwaybillprinter')
-      {
-        //region 定义可选问题
-        let answerOptions = [
-          {
-            id:'a',
-            snippetIndex: '',
-            title:'已准备好',
-            desc:'打印机和电脑已经正确连接并可以使用'
-          },
-          {
-            id:'b',
-            snippetIndex: 'deviceInfo.initMovieSet6.info.giftPrinter',
-            title:'需要赠送',
-            desc:'我需要速配赠送打印机',
-          },
-          {
-            id:'c',
-            snippetIndex: '',
-            title: '不需要',
-            desc: '我不需要打印商品清单,也不使用后置打单功能',
-          },
-          {
-            id:'d',
-            snippetIndex: '',
-            title:'什么是后置打单?',
-            desc:'后置打单好处多,点击观看后置打单功能的说明',
-          }
-        ];
-        //endregion
-        let selectHas80PrinterDom=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
-          let id = answer.id;
-          let destAnswerSnippetIndex = answer.snippetIndex;
-          this.changeSnippet(destAnswerSnippetIndex);
-          this.setState({interactingQuestionDom:null})
-        }}/>
-        this.setState({interactingQuestionDom:selectHas80PrinterDom}
-            ,()=>
-            {
-              //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
-              if (snippet.transitionSnippetIndex)
-              {
-                this.changeSnippet(snippet.transitionSnippetIndex);
-              }
-            }
-        )
-      }
+    //region 提问  问用户要把大于5种商品的包裹  商品详情打印在哪里?
+    else if(snippet.index==='selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill')
+    {
+      //region 定义可选问题项
+      let answerOptions = [
+        {
+          id: 'a',
+          snippetIndex: 'selectPrintMode.initMovieSet5.questionWithWaiter.selectedWaybill',
+          title:'使用面单纸',
+          // desc:'',
+          // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+          content:<div>
+            <div>将使用快递单作为商品详单,但快递单不具备自动切纸功能,可能会造成浪费哦</div>
+            {/*<img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>*/}
+          </div>
+        },
+        {
+          id: 'b',
+          snippetIndex: 'selectPrintMode.initMovieSet5.info.smartChoice',
+          title:'使用热敏纸',
+          desc:'将包商品种类大于5种的详单,打印在80毫米的热敏打印机上,这需要一台热敏打印机',
+        },
+      ];
       //endregion
-      //region 其他的问题
+      let selectMoreItemDetailDeviceDom=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
+        let id = answer.id;
+        let destAnswerSnippetIndex = answer.snippetIndex;
+        this.changeSnippet(destAnswerSnippetIndex);
+        this.setState({interactingQuestionDom:null})
+      }}/>
+      return selectMoreItemDetailDeviceDom;
+    }
+      //endregion
+    //region 如果需要用户反馈有没有或者使用不使用80毫米热敏打印机
+    else if(snippet.index === 'deviceInfo.initMovieSet6.questionWithWaiter.pcandwaybillprinter')
+    {
+      //region 定义可选问题
+      let answerOptions = [
+        {
+          id:'a',
+          snippetIndex: 'deviceInfo.initMovieSet6.info.needSpeaker',
+          title:'已准备好',
+          desc:'打印机和电脑已经正确连接并可以使用'
+        },
+        {
+          id:'b',
+          snippetIndex: 'deviceInfo.initMovieSet6.info.giftPrinter',
+          title:'需要赠送',
+          desc:'我需要速配赠送打印机',
+        },
+        {
+          id:'c',
+          snippetIndex: '',
+          title: '不需要',
+          desc: '我不需要打印商品清单,也不使用后置打单功能',
+        },
+        {
+          id:'d',
+          snippetIndex: '',
+          title:'什么是后置打单?',
+          desc:'后置打单好处多,点击观看后置打单功能的说明',
+        }
+      ];
+      //endregion
+      let selectHas80PrinterDom=<ItemInfoPrintingDestSelectForm answerOptions={answerOptions} onSelectAnswer={(answer)=>{
+        let id = answer.id;
+        let answerSnippet = this.snippetsDic[answer.snippetIndex];
+        console.log('选择答案的片段:',answer.snippetIndex, answerSnippet);
+        if (answerSnippet && answerSnippet.actionAtEnd !== 'return')
+        {
+          //如果选择的选项不是要了解某些功能的,那就是已经对问题做出了回应. 如果已经做出了回应 最后交互的问题就设置为空.
+          this.setLastQuestionSnippet(null);
+          console.log('重新设置问题为空');
+        }
+        let destAnswerSnippetIndex = answer.snippetIndex;
+        this.changeSnippet(destAnswerSnippetIndex);
+        this.setState({interactingQuestionDom:null})
+      }}/>
 
-      //这是个问题,那么要对问题进行答案的显示展示
-      // this.answerSelectorRef.showAnswers(
-      //   [
-      //     {
-      //       id: 'a1',
-      //       snippetIndex: Object.keys(this.snippetsDic)[2],
-      //       title:'A',
-      //       desc:'打印到快递单',
-      //       // content:<Button size={'large'} type={'primary'} danger>确认</Button>
-      //       content:<div>
-      //         <div>哈哈</div>
-      //         <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
-      //       </div>
-      //     },
-      //     {
-      //       id: 'a2',
-      //       snippetIndex: Object.keys(this.snippetsDic)[3],
-      //       title:'B',
-      //       desc:'打印到单独详单'
-      //     },
-      //     {
-      //       id: 'a3',
-      //       snippetIndex:Object.keys(this.snippetsDic)[4],
-      //       title:'C',
-      //       desc:'重新观看说明'
-      //     },
-      //     // {id:'a4'},
-      //     // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
-      //     // {id:'a9'}
-      //   ]
-      // )
-
-      //endregion
+      return selectHas80PrinterDom;
     }
     //endregion
-    //如果当前视频不用动作直接跳转到下一个视频的话,直接跳转
-    if (snippet.redirectSnippetIndex)
+    //region 其他的问题
+
+    //这是个问题,那么要对问题进行答案的显示展示
+    // this.answerSelectorRef.showAnswers(
+    //   [
+    //     {
+    //       id: 'a1',
+    //       snippetIndex: Object.keys(this.snippetsDic)[2],
+    //       title:'A',
+    //       desc:'打印到快递单',
+    //       // content:<Button size={'large'} type={'primary'} danger>确认</Button>
+    //       content:<div>
+    //         <div>哈哈</div>
+    //         <img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>
+    //       </div>
+    //     },
+    //     {
+    //       id: 'a2',
+    //       snippetIndex: Object.keys(this.snippetsDic)[3],
+    //       title:'B',
+    //       desc:'打印到单独详单'
+    //     },
+    //     {
+    //       id: 'a3',
+    //       snippetIndex:Object.keys(this.snippetsDic)[4],
+    //       title:'C',
+    //       desc:'重新观看说明'
+    //     },
+    //     // {id:'a4'},
+    //     // {id:'a5'},{id:'a6'},{id:'a7'},{id:'a8'},
+    //     // {id:'a9'}
+    //   ]
+    // )
+
+    //endregion
+  }
+  //endregion
+  //region 显示交互页面
+  showInteractionDom(dom,snippet)
+  {
+    //如果当前的脚本是让输入手机号码,构造完了设置手机号的dom以后 显示在播放器的上层
+    this.setState({interactingQuestionDom:dom}
+      ,()=>
+      {
+        // console.log('显示交互dom:', dom, '所使用的脚本是:', snippet, '脚本的过场是:', snippet.transitionSnippetIndex);
+        //设置完以后,如果当前这个脚本视频需要有承接视频,显示承接视频
+        if (snippet.transitionSnippetIndex)
+        {
+          this.changeSnippet(snippet.transitionSnippetIndex);
+        }
+      }
+    )
+  }
+  //endregion
+  //region 当播放器时间变更
+  onSnippetFinished(snippet) {
+    if(snippet.type!=='transitions')
     {
+      console.log('非过场片段播放完毕,片段是:',snippet.name, snippet);
+    }
+
+    if(snippet.type === 'info')
+    {
+      console.log('赠送视频播放完毕');
+      let lastQ = this.getLastQuestionSnippet();
+      console.log('上一个问题', lastQ);
+      if (lastQ)
+      {
+        let lastQuestionDom = this.getInteractionDom(lastQ);
+        this.showInteractionDom(lastQuestionDom, lastQ);
+      }
+    }
+    //region 如果视频需要交互 展示交互页面
+    if (snippet.type.indexOf('question') >= 0) {
+      let dom = this.getInteractionDom(snippet);
+      this.showInteractionDom(dom, snippet);
+      this.setLastQuestionSnippet(snippet);
+    }
+    //endregion
+    //region 如果当前视频不用动作直接跳转到下一个视频的话,直接跳转
+    if (snippet.redirectSnippetIndex) {
       this.changeSnippet(snippet.redirectSnippetIndex);
       return;
     }
-    //endregion
-        //region 如果当前视频播放完毕后需要播放过场视频的话,转换到播放过场视频
-    else if (snippet.transitionSnippetIndex)
-    {
+      //endregion
+    //region 如果当前视频播放完毕后需要播放过场视频的话,转换到播放过场视频
+    else if (snippet.transitionSnippetIndex) {
       this.changeSnippet(snippet.transitionSnippetIndex);
       return;
     }
-    //endregion
-        //region 如果当前视频是过场动画,直接进行重播
-    else if(snippet.type==='transitions')
-    {
+      //endregion
+    //region 如果当前视频是过场动画,直接进行重播
+    else if (snippet.type === 'transitions') {
       this.snippetPlayer.rePlay();
       return;
     }
@@ -416,10 +434,22 @@ class InteractiveMovieScriptPlayer extends Component {
     this.snippetPlayer.changeSnippet(newSnippet,true);
   }
   //endregion
+  //region 获取或记录上次交互的视频,以便等介绍视频跳出的时候,可以重新显示之前的问题
+  setLastQuestionSnippet(snippet)
+  {
+    //上次互动过的问题脚本是:
+    this.setState({lastQuestionSnippet  :snippet})
+  }
+  getLastQuestionSnippet()
+  {
+    return this.state.lastQuestionSnippet;
+  }
+  //endregion
 
   //region 当用户对跳出来的问题进行了交互选择 onSelectAnswer
   onSelectAnswer(answer)
   {
+    console.log('选择了答案:',answer)
     let id = answer.id;
     let destAnswerSnippetIndex = answer.snippetIndex;
     this.changeSnippet(destAnswerSnippetIndex);
@@ -436,6 +466,15 @@ class InteractiveMovieScriptPlayer extends Component {
     }
     let masked=currentSnippet.type==='transitions';
     let interactingQuestionDom = this.state.interactingQuestionDom;
+    let snippetActionPanelDom = null;
+    let enableSnippetAction = true;
+    if (enableSnippetAction)
+    {
+      snippetActionPanelDom = <div className={classNames.snippetControlPanel}>
+        <div className={classNames.rePlayBtn}>🔄</div>
+        <div className={classNames.skipBtn}>⏭</div>
+      </div>
+    }
 
     return (
       <div className={classNames.main}>
@@ -453,7 +492,7 @@ class InteractiveMovieScriptPlayer extends Component {
                               {
                                 if (e)
                                 {
-                                  console.log('设置当前页面播放器组件:',e);
+                                  // console.log('设置当前页面播放器组件:',e);
                                   this.snippetPlayer=e;
                                 }
                               }
@@ -461,6 +500,9 @@ class InteractiveMovieScriptPlayer extends Component {
           />
         </div>
         {interactingQuestionDom}
+        {
+          snippetActionPanelDom
+        }
         {/*<AnswerSelector ref={e=>this.answerSelectorRef = e}*/}
         {/*                onSelectAnswer={e => {*/}
         {/*                  this.onSelectAnswer(e);*/}

@@ -34,7 +34,7 @@ class AnswerSelector extends Component {
       {
         colCount = Math.floor(colCount) + 1;
       }
-      console.log('列数量是:', colCount);
+      // console.log('列数量是:', colCount);
       rowCount = nodeCount/ colCount;
       if (Math.floor(rowCount)<rowCount)
       {
