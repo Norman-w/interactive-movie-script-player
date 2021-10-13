@@ -15,6 +15,8 @@ import {Button, message} from "antd";
 import AnswerSelector from "./AnswerSelector";
 import SenderMobileInputForm from "./QPScriptInteractors/SenderMobileInputForm";
 import ItemInfoPrintingDestSelectForm from "./QPScriptInteractors/ItemInfoPrintingDestSelectForm";
+import Header from "./component/Header";
+import Clock from "./QPScriptInteractors/Clock";
 //endregion
 //region 正在交互中的问题类型枚举.
 // const interactingQuestionTypeEnum=
@@ -472,6 +474,8 @@ class InteractiveMovieScriptPlayer extends Component {
     {
       snippetActionPanelDom = <div className={classNames.snippetControlPanel}>
         <div className={classNames.rePlayBtn}>🔄</div>
+        {/*<Header/>*/}
+        <Clock></Clock>
         <div className={classNames.skipBtn}>⏭</div>
       </div>
     }

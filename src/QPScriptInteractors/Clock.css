@@ -1,0 +1,45 @@
+/*主界面的样式*/
+.picky-date-time {
+    /*border: 1px solid darkblue;*/
+    box-shadow: 0 0 3px 8px red;
+    min-height: 10px;
+    height: auto;
+    padding: 0;
+    margin: 0;
+}
+
+/*关闭按钮的样式*/
+.picky-date-time__close {
+    display: none;
+    /*border: 1px solid red;*/
+}
+/*!*一刻钟节点的样式*!*/
+/*.picky-date-time-clock__clock-minute--five.picky-date-time-clock__clock-minute--quarter {*/
+/*    height: 6px;*/
+/*    background: #343a40;*/
+/*    width: 1px;*/
+/*    border: 1px solid red;*/
+/*}*/
+/*!*五分钟节点的样式*!*/
+/*.picky-date-time-clock__clock-minute--five {*/
+/*    height: 3px;*/
+/*    background: #495057;*/
+/*    width: 1px;*/
+/*    border: 1px solid red;*/
+/*}*/
+/*使用当前时间按钮*/
+.picky-date-time-clock__icon--refresh, .picky-date-time-clock__icon--remove_circle_outline, .picky-date-time-clock__icon--schedule {
+    cursor: pointer;
+    color: #868e96;
+    border: 1px solid red;
+    /*display: none;*/
+}
+/*重新设置时间按钮*/
+.picky-date-time-clock__icon--remove_circle_outline {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border: 1px solid red;
+    /*display: none;*/
+}
