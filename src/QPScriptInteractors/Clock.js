@@ -14,6 +14,7 @@ class Clock extends Component {
             hour: '03',
             minute: '10',
             second: '40',
+          d:'10:10:10 AM'
             // meridiem: 'PM'
         };
     }
@@ -48,6 +49,13 @@ class Clock extends Component {
     onClose() {
         this.setState({showPickyDateTime: false});
     }
+  onResetDefaultTime(res) {
+    this.setState({
+      second: res.clockHandSecond.value,
+      minute: res.clockHandMinute.value,
+      hour: res.clockHandHour.value
+    });
+  }
     render() {
         const {
             showPickyDateTime,
@@ -69,7 +77,7 @@ class Clock extends Component {
                 show={true}
                 defaultDate={'2011-01-01'}
                 // defaultTime={this.state.defaultTime}
-                defaultTime={'10:11:11 AM'}
+                defaultTime={this.state.d}
                 onClose={() => this.onClose()}
                 onYearPicked={res => this.onYearPicked(res)}
                 onMonthPicked={res => this.onMonthPicked(res)}
@@ -86,7 +94,7 @@ class Clock extends Component {
                 ref={e=>this.clockRef=e}
             /><div onClick={event => {
                 console.log('点了')
-                this.setState({defaultTime:'10:11:11 AM'})
+                this.setState({defaultTime:'8:8:8 AM'})
             }}>点一下</div></>
         );
     }
