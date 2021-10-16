@@ -3,7 +3,7 @@
   width: 100%;
   height: 100vh;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   border: 1px solid salmon;
@@ -26,4 +26,102 @@
   user-select: none;
   cursor: pointer;
 }
+.timeTextEditor
+{
+  width: 300px;
+  min-height: 70px;
+  height: 70px;
+  font-size: 70px;
+  display: flex;
+  flex-direction: row;justify-content: center;
+  align-items: center;
+  /*border: 1px solid red;*/
+  box-shadow: 0 0 3px 2px lightgrey;
+  margin-top: 10px;
+  border-radius: 40px;
+}
+.hour
+{
+  /*color: mistyrose;*/
+  color: #cfeaa1;
+  /*color: mediumaquamarine;*/
+  width: 30%;
+  user-select: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  /*border:  1px solid salmon;*/
+}
+.maoHao
+{
+  color: black;
+  height: 50%;
+  width: 8%;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  /*border: 1px solid salmon;*/
+}
+.maoHao1
+{
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  background-color: salmon;
+}
+.maoHao2
+{
+  width: 8px;
+  height: 8px;
+  border-radius: 8px;
+  background-color: salmon;
+}
+.minute
+{
+  /*color: mistyrose;*/
+  color: #7bc0db;
+  width: 30%;
+  user-select: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  /*border:  1px solid salmon;*/
 
+}
+.rounds
+{
+  font-size: 15px;
+  color: #808485;
+  width: 20%;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  /*border: 1px solid red;*/
+}
+.round
+{
+  width: 100%;
+  color: lightgrey;
+  /*border: 1px solid red;*/
+  display: flex;flex-direction: column;justify-content: center;align-items: center;
+  /*padding: 5px;*/
+  margin-top :2px;
+  margin-bottom: 2px;
+  height: 25px;
+  text-shadow: #d5e7d5 0 0 1px;
+  /*font-weight: bold;*/
+  border-radius: 30px;
+  transition: 0.8s;
+}
+.roundSelected
+{
+  composes: round;
+  box-shadow: 0 0 2px forestgreen inset,0 0 5px forestgreen;
+  color: forestgreen;
+}
