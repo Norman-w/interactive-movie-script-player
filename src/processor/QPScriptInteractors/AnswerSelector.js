@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import classNames from './AnswerSelector.module.css';
-import DefaultAnswerOptions from "./DefaultAnswerOptions";
+import DefaultAnswerOptions from "../../component/DefaultAnswerOptions";
 
 // import 'antd/dist/antd.css'
 

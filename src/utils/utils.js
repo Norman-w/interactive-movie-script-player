@@ -43,7 +43,9 @@ class Utils {
         if (params)
         {
             params['method'] = api;
+
         }
+
         fetch(url,{method:'POST',mode:'cors',headers:{'Content-Type': 'application/json'}, body:params},).then(
             response => {
                 console.log('fetch的response是:',response);
@@ -90,16 +92,24 @@ class Utils {
             );
         });
     }
-     doPost = async function ({api, params, success, errProcFunc, failProcFunc, session}) {
+     doPost = async function ({api, params, success, errProcFunc, failProcFunc, session,routerUrl}) {
         let url = 'https://www.enni.group/interactivemoviescripteditor/';
+        if (routerUrl)
+        {
+          url = routerUrl;
+        }
         if (params)
         {
             params['method'] = api;
+          if (session)
+          {
+            params['session'] = session;
+          }
         }
         let ft = fetch(url,{method:'POST',headers:{'Content-Type': 'application/json'}, body:JSON.stringify(params)})
             let ft2= (await ft);
         let data = (await ft2.json())
-         console.log(data);
+         console.log('doPost结束后 data是:',data);
          if (data.IsError === true)// || !data.ErrMsg || !data.ErrCode)
          {
              if (errProcFunc) {
@@ -115,6 +125,41 @@ class Utils {
              }
          }
     }
+    //region 让input的输入数字只能是大于0以上的数字. 如果是空字符串 就返回null.
+  limitNumber = (value, min,max) =>{
+      let ret = null;
+    if (typeof value === 'string') {
+      // console.log('是字符串')
+      ret = !isNaN(Number(value)) ? value.replace(/\b(0+)/g, '') : null;
+    } else if (typeof value === 'number') {
+      // console.log('是数字')
+      ret= !isNaN(value) ? String(value).replace(/\b(0+)/g, '') : null
+    } else {
+      ret= null
+    }
+    let num = parseInt(ret);
+    if (!isNaN(num))
+    {
+      num = num>=min? num:min;
+      num = num<=max? num:max;
+      return num;
+    }
+    return ret;
+  }
+  //endregion
+//region 把json的字段转换成array 就是把   {}转换成 []
+  jsonField2Array(jsonObj)
+  {
+    let ret = [];
+    let keys = Object.keys(jsonObj);
+    for (let i = 0; i < keys.length; i++) {
+      let key = keys[i];
+      let field = jsonObj[key];
+      ret.push(field);
+    }
+    return ret;
+  }
+  //endregion
 }
 const utils=new Utils();
 export default utils;

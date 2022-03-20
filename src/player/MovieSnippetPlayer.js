@@ -7,7 +7,7 @@ import {
   BigPlayButton,
 } from 'video-react';
 import "video-react/dist/video-react.css"; // import css
-import './video-react-rewrite.css';
+import '../video-react-rewrite.css';
 import {message} from "antd";
 //endregion
 
@@ -19,9 +19,6 @@ class MovieSnippetPlayer extends Component {
     movieUrl:null,
     movieId:null,
     enableClickPlay:false,
-  }
-  constructor(props) {
-    super(props);
   }
   componentDidMount() {
     this.updateProps2State(this.props);
@@ -75,12 +72,11 @@ class MovieSnippetPlayer extends Component {
   }
   onPlayerLoadedMetadata(e)
   {
-    // console.log('视频加载完成:',e);
+    console.log('视频加载完成:',e);
     this.player.seek(this.state.startTime);
   }
-  onClick(e)
+  onClick()
   {
-    // console.log('跳转到开头处并开始播放');
     if (!this.state.enableClickPlay)
     {
       return;
@@ -105,7 +101,7 @@ class MovieSnippetPlayer extends Component {
     let pSnippet = snippet;
     if (!snippet)
     {
-      message.warn('无效的片段信息');
+      message.warn('无效的片段信息').then(r => console.log(r));
       return;
     }
     this.setState({
@@ -133,7 +129,6 @@ class MovieSnippetPlayer extends Component {
   //endregion
   render() {
     let onPlayerTimeUpdate = this.onPlayerTimeUpdate.bind(this);
-    let snippet = this.state.snippet;
     return (
       <div
         className={classNames.main}>

@@ -1,18 +1,26 @@
 .container
 {
   width: 100%;
-  height: 100vh;
+  /*height: auto;*/
+  /*height: 100vh;*/
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  border: 1px solid salmon;
+  /*border: 1px solid salmon;*/
+  /*background-color: white;*/
+  /*height: 800px;*/
 }
 .main
 {
   /*border: 1px solid red;*/
-  box-shadow: 0 0 5px 1px #e7cac7;
   position: relative;
+  /*border:  1px solid red;*/
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 80%;
 }
 .centerRed
 {
@@ -26,32 +34,22 @@
   user-select: none;
   cursor: pointer;
 }
-.timeTextEditor
-{
-  width: 300px;
-  min-height: 70px;
-  height: 70px;
-  font-size: 70px;
-  display: flex;
-  flex-direction: row;justify-content: center;
-  align-items: center;
-  /*border: 1px solid red;*/
-  box-shadow: 0 0 3px 2px lightgrey;
-  margin-top: 10px;
-  border-radius: 40px;
-}
+
 .hour
 {
   /*color: mistyrose;*/
   color: #cfeaa1;
   /*color: mediumaquamarine;*/
   width: 30%;
+  height: 100%;
   user-select: none;
   display: flex;
   flex-direction: row;
   justify-content: center;
   align-items: center;
   /*border:  1px solid salmon;*/
+  /*border: 1px solid red;*/
+  cursor: pointer;
 }
 .maoHao
 {
@@ -90,7 +88,7 @@
   justify-content: center;
   align-items: center;
   /*border:  1px solid salmon;*/
-
+  cursor: pointer;
 }
 .rounds
 {
@@ -118,6 +116,7 @@
   /*font-weight: bold;*/
   border-radius: 30px;
   transition: 0.8s;
+  cursor: pointer;
 }
 .roundSelected
 {
@@ -125,3 +124,20 @@
   box-shadow: 0 0 2px forestgreen inset,0 0 5px forestgreen;
   color: forestgreen;
 }
+
+.slowIn
+{
+  animation: slowInFrame 400ms, ease infinite alternate;
+}
+@keyframes slowInFrame {
+  from {
+    transform: scale(0.1);
+    opacity: 0%;
+  }
+  to {
+    transform: scale(1);
+    opacity: 100%;
+  }
+}
+
+

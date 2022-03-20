@@ -2,9 +2,9 @@
 import React, {useState} from 'react';
 import classNames from './SenderMobileInputForm.module.css'
 import {Button, Input, message} from "antd";
-import '../utils/utils';
-import checkMobile from "../utils/utils";
-import utils from "../utils/utils";
+import '../../utils/utils';
+import checkMobile from "../../utils/utils";
+import utils from "../../utils/utils";
 
 function SenderMobileInputForm(props) {
     let [mobile, setMobile] = useState('');

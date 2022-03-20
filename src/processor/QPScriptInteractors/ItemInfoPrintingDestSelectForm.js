@@ -1,6 +1,6 @@
 import React from 'react';
 import classNames from './ItemInfoPrintingDestSelectForm.module.css'
-import AnswerSelector from "../AnswerSelector";
+import AnswerSelector from "./AnswerSelector";
 
 function ItemInfoPrintingDestSelectForm(props) {
     let {answerOptions,onSelectAnswer} = props;

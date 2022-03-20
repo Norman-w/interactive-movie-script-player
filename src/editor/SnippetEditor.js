@@ -1,12 +1,10 @@
 import React, {Component} from 'react';
 import classNames from './SnippetEditor.module.css'
-import {Radio, Input, Select, Button, InputNumber,Collapse, Modal} from "antd";
-import MovieSnippetPlayer from "./MovieSnippetPlayer";
+import {Radio, Input, Button, InputNumber,Collapse, Modal} from "antd";
+import MovieSnippetPlayer from "../player/MovieSnippetPlayer";
 import 'antd/dist/antd.css';
-import {act} from "@testing-library/react";
-import utils from "./utils/utils";
+import utils from "../utils/utils";
 
-const {Option} = Select;
 const { Panel } = Collapse;
 
 /*2021年09月20日17:23:01
@@ -31,9 +29,6 @@ class SnippetEditor extends Component {
       scripts: {},
     }
 
-  constructor(props) {
-    super(props);
-  }
 
   componentDidMount() {
     this.setState({
@@ -53,31 +48,6 @@ class SnippetEditor extends Component {
     console.log('编辑页面 返回脚本index', ret);
     return ret;
   }
-  //endregion
-  //region 提取脚本中的指定类型的脚本的信息的dictionary
-  getSnippetListFromScript(typesArr) {
-    //typesArr must be array;
-    //region 获取当前可用的过场视频集合
-    let retSnippet = [];
-    let scriptsKeys = Object.keys(this.state.scripts);
-    for (let i = 0; i < scriptsKeys.length; i++) {
-      let key = scriptsKeys[i];
-      let script = this.state.scripts[key];
-      let snippetsKeys = Object.keys(script.snippets)
-      for (let j in snippetsKeys) {
-        let skk = snippetsKeys[j];
-        let snippet = script.snippets[skk];
-        // if(snippet.type==='transitions')
-        if (typesArr.indexOf(snippet.type)) {
-          retSnippet.push(snippet);
-        }
-      }
-    }
-    // console.log('可用过场集合', transitionSnippets, '可用所有片段:', allSnippets);
-    //endregion
-    return retSnippet;
-  }
-
   //endregion
   //region 开始时间改变了
   onChangeStartTime(value) {
@@ -148,13 +118,11 @@ class SnippetEditor extends Component {
     let movieUrl = this.state.movieUrl;
     let movieDuration = this.state.movieDuration;
     let scriptId = this.state.scriptId;
-    let transitionsList = this.getSnippetListFromScript(['transitions']);
-    let canRedirectSnippetList = this.getSnippetListFromScript(['info', 'question', 'questionWithWaiter']);
     if (!snippet || !movieId || !scriptId || !movieUrl) {
       return null;
     }
     let scriptList = utils.jsonField2Array(this.state.scripts);
-    let player = this.movieSnippetPlayerRef;
+    // let player = this.movieSnippetPlayerRef;
 
     return (
       <div className={classNames.main}>
@@ -257,7 +225,7 @@ class SnippetEditor extends Component {
                 let snippetsList = utils.jsonField2Array(script.snippets);
                 return <Panel header={script.name} key={index}>
                   {
-                    snippetsList.map((snippet, snippetIndex) => {
+                    snippetsList.map((snippet) => {
                         if (snippet.id === this.state.snippet.id || snippet.type !== "transitions") {
                           return null;
                         }
@@ -294,7 +262,6 @@ class SnippetEditor extends Component {
           <div style={{marginTop: 22}}>片段播放结束后动作:</div>
           <Radio.Group
             onChange={(e) => {
-              // console.log('eshi',e.target.value);
               this.props.snippet.actionAtEnd = e.target.value;
               this.setState({snippet: this.props.snippet})
             }}
@@ -317,7 +284,7 @@ class SnippetEditor extends Component {
                 let snippetsList = utils.jsonField2Array(script.snippets);
                 return <Panel header={script.name} key={index}>
                   {
-                    snippetsList.map((snippet, snippetIndex) => {
+                    snippetsList.map((snippet) => {
                         if (snippet.id === this.state.snippet.id || snippet.type === "transitions") {
                           return null;
                         }
