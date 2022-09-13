@@ -146,7 +146,7 @@
   justify-content: space-around;
   align-items: center;
   /*border: 1px solid blue;*/
-  box-shadow: 0 0 3px 2px #e2a7ec;
+  /*box-shadow: 0 0 3px 2px #e2a7ec;*/
   border-radius: 30px;
 }
 .skipBtn

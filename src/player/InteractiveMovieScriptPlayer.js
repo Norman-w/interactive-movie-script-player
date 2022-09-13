@@ -3,9 +3,9 @@ import classNames from './InteractiveMovieScriptPlayer.module.css';
 import "video-react/dist/video-react.css"; // import css
 import '../video-react-rewrite.css';
 import MovieSnippetPlayer from "./MovieSnippetPlayer";
-import {message} from "antd";
+import {message, Tooltip} from "antd";
 class InteractiveMovieScriptPlayer extends Component {
-  answerSelectorRef = null;
+  // answerSelectorRef = null;
   snippetPlayer=new MovieSnippetPlayer({});
   //region 页面数据  state
   state =
@@ -215,8 +215,12 @@ class InteractiveMovieScriptPlayer extends Component {
     if (enableSnippetAction)
     {
       snippetActionPanelDom = <div className={classNames.snippetControlPanel}>
-        <div className={classNames.rePlayBtn} onClick={()=>{this.onClickRePlayBtn()}}>🔄</div>
-        <div className={classNames.skipBtn} onClick={()=>{this.onClickSkipBtn()}}>⏭</div>
+        <Tooltip title={'重放'}>
+          <div className={classNames.rePlayBtn} onClick={()=>{this.onClickRePlayBtn()}}>🔄</div>
+        </Tooltip>
+        <Tooltip title={'跳过'}>
+          <div className={classNames.skipBtn} onClick={()=>{this.onClickSkipBtn()}}>⏭</div>
+        </Tooltip>
       </div>
     }
 

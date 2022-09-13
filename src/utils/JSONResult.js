@@ -1,6 +1,6 @@
 // import PropTypes from 'prop-types';
 import styles from './JSONResult.scss';
-import JSONTree from 'react-json-tree';
+import {JSONTree} from 'react-json-tree';
 import theme from './JSONResultTheme';
 
 function JSONResult({ json }) {
