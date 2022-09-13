@@ -117,7 +117,7 @@
   align-items: center;
   font-size: 30px;
   color: lightgray;
-  box-shadow: lightgray 0px 0px 3px;
+  box-shadow: lightgray 0 0 3px;
   text-shadow: 1px 1px skyblue;
   border-radius: 20px;
   user-select: none;
