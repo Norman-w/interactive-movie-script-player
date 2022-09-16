@@ -1,6 +1,6 @@
 import React from 'react';
 import classes from './AutoPrintRule.module.css'
-import TimeSelector from "dragable-time-selector/build";
+import TimeSelector from "draggable-time-selector";
 import {Button} from "antd";
 import 'antd/dist/antd';
 
