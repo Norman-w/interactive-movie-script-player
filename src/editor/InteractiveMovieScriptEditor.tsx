@@ -668,7 +668,7 @@ await utils.doPost({
         let posterUrl = this.state.currentMovie.posterUrl;
         let duration = this.state.currentMovie.duration;
         let onAutoPlayChange = this.onAutoPlayChange.bind(this);
-        // let onSelectModeChange = this.onSelectModeChange.bind(this);
+        let onSelectModeChange = this.onSelectModeChange.bind(this);
         let onClickAddAnchorBtn = this.onClickAddAnchorBtn.bind(this);
         let onClickAddScriptBtn = this.onClickAddScriptBtn.bind(this);
         let onClickRemoveAnchorBtn = this.onClickRemoveAnchorBtn.bind(this);
@@ -703,7 +703,6 @@ await utils.doPost({
         //     }
         //     else if(this.lastPlayerState.)
         // }
-        // @ts-ignore
         return (
             <div className={classNames.main}>
                 <div className={classNames.playerContent}>
