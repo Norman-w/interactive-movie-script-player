@@ -1,5 +1,5 @@
 /*让大的那个还没开始播放时候的那个按钮不显示*/
-.video-react .video-react-big-play-button.video-react-big-play-button-hide
+.video-react .video-react-big-play-button.video-react-big-play-button-center
 {
     display: none;
 }

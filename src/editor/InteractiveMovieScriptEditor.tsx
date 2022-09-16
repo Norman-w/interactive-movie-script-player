@@ -28,12 +28,81 @@ import utils from "../utils/utils";
 import scriptProcessor from '../processor/QPScriptProcessor';
 
 
+//region start and prop interface
+interface IState
+{
+    addScriptHover:boolean,
+    currentMovie:IMovie,
+    currentMovieState: null,
+    timeSliderValue: number,
+    timeSliderMarks: {[key:number]:string},
+    currentSelectScriptId:string,
+    authPlayWhenSlid: boolean,
+    playerPlaying: boolean,
+    currentSelectedNode: number,
+    scripts: {
+        [key:string]:IScript
+    },
+    //已经添加到当前编辑器中的视频素材列表
+    moviesSources: IMovie[],
+    onlySelectNode:any,
+}
+interface IProp
+{
+
+}
+//endregion
+
+
+//region types
+class IMovie
+{
+    constructor() {
+        this.id = '';
+        this.name = '';
+        this.movieUrl = '';
+        this.posterUrl = '';
+        this.duration = 0;
+    }
+    id:string;
+    name:string;
+    movieUrl:string;
+    posterUrl:string;
+    duration:number;
+}
+class IScript
+{
+    constructor() {
+        this.id='';
+        this.name='';
+        this.snippets = {}
+    }
+    id:string;
+    name:string;
+    snippets: { [key:string]:ISnippet }
+}
+interface ISnippet
+{
+    movieId?:string,
+    movieUrl?:string,
+    id?:string,
+    name?:string,
+    type?:any,
+    startTime?:number,
+    endTime?:number,
+    actionAtEnd?:string,
+    redirectSnippetIndex?:string,
+    transitionSnippetIndex?:string,
+    scriptId?:string,
+}
+//endregion
+
 // const {Step} = Steps;
 const MySwal = withReactContent(Swal)
 
-class InteractiveMovieScriptEditor extends Component {
-    state = {
-        currentMovie: {},
+class InteractiveMovieScriptEditor extends Component<IProp,IState> {
+    state:IState = {
+        currentMovie: new IMovie(),
         currentMovieState: null,
         timeSliderValue: 0,
         timeSliderMarks: {0: '开始'},
@@ -46,8 +115,10 @@ class InteractiveMovieScriptEditor extends Component {
         },
         //已经添加到当前编辑器中的视频素材列表
         moviesSources: [],
+        addScriptHover:false,
+        onlySelectNode:false
     }
-    player=new Player({});
+    player:any;
     //视频文件是否正在加载中
     // movieLoading = false;
     //视频刚加载出来以后的状态信息,主要用于视频的时长获取并更新slider的长度信息
@@ -85,8 +156,8 @@ class InteractiveMovieScriptEditor extends Component {
 
     //endregion
     //region 当时间轴发生变化的时候
-    onTimeSliderChange(e) {
-        if (this.timeSliderSeeking === true) {
+    onTimeSliderChange(e:any) {
+        if (this.timeSliderSeeking) {
             // console.log('当前正在修改')
             return;
         }
@@ -95,7 +166,7 @@ class InteractiveMovieScriptEditor extends Component {
 
     //endregion
     //region 当时间轴发生鼠标抬起后变化的时候
-    onTimeSliderAfterChange(e) {
+    onTimeSliderAfterChange(e:any) {
         this.timeSliderSeeking = true;
         // console.log('松开的时候:',e);
         this.player.seek(e);
@@ -119,7 +190,7 @@ class InteractiveMovieScriptEditor extends Component {
         // this.setState({timeSliderValue:e});
     }
 
-    onTimeNodeSliderAfterChange(e) {
+    onTimeNodeSliderAfterChange(e:any) {
         console.log(e)
         this.timeSliderSeeking = true;
         this.player.seek(e);
@@ -152,7 +223,7 @@ class InteractiveMovieScriptEditor extends Component {
 
     //endregion
     //region 切换是否自动播放
-    onAutoPlayChange(e) {
+    onAutoPlayChange(e:any) {
         this.setState({authPlayWhenSlid: e});
         // this.authPlayWhenSlid = e;
         // console.log(e)
@@ -197,23 +268,23 @@ class InteractiveMovieScriptEditor extends Component {
     //endregion
     //region 当播放器的当前播放时间更新
     //region 节点选择模式切换
-    onSelectModeChange(e) {
+    onSelectModeChange(e:any) {
         this.setState({onlySelectNode: e});
     }
 
     //endregion
-    onPlayerTimeUpdate(e) {
+    onPlayerTimeUpdate(e:any) {
         // console.log('事件更新事件:',e);
         this.setState({timeSliderValue: e.target.currentTime});
     }
 
     //endregion
     //region 视频预览
-    onClickInnerBtn = (e) => {
+    onClickInnerBtn = (e:any) => {
         console.log('you are clicked button in html', e.target.innerText)
         MySwal.clickConfirm();
     }
-    viewPlayer = null;
+    viewPlayer:any;
 
     onClickPreViewBtn() {
       // console.log('点击预览按钮,将要进行脚本的预览,给定的scripts是:', this.state.scripts);
@@ -233,7 +304,7 @@ class InteractiveMovieScriptEditor extends Component {
             showConfirmButton: false,
 
             width: 1000,
-            height: 800,
+            // height: 800,
             didOpen: () => {
                 // `MySwal` is a subclass of `Swal`
                 //   with all the same instance & static methods
@@ -281,7 +352,7 @@ class InteractiveMovieScriptEditor extends Component {
         let moviePoster = '';//'https://www.enni.group/file/test2.png';
         let mf = new MovieScriptFactory();
         // console.log(this.initMovieState);
-        let movie = mf.CreateMovie('initMovieSet' + (this.state.moviesSources.length + 1),
+        let movie:IMovie = mf.CreateMovie('initMovieSet' + (this.state.moviesSources.length + 1),
             '视频素材' + (this.state.moviesSources.length + 1),
             '这是速配的第一次测试使用视频做设置向导', 0, null, movieUrl, moviePoster, 'mp4');
 
@@ -295,7 +366,7 @@ class InteractiveMovieScriptEditor extends Component {
 
     //endregion
     //region 点击视频素材
-    onClickMovieSourceBtn(item) {
+    onClickMovieSourceBtn(item:IMovie) {
         this.setState({currentMovie: item});
         this.player.load();
     }
@@ -308,7 +379,7 @@ class InteractiveMovieScriptEditor extends Component {
 
     //endregion
     //region 播放器加载完了视频的meta信息
-    onPlayerLoadedMetadata(e) {
+    onPlayerLoadedMetadata(e:any) {
         console.log('加载完了视频的基本信息:', e.target)
         let url = e.target.currentSrc;
         let duration = e.target.duration;
@@ -326,7 +397,7 @@ class InteractiveMovieScriptEditor extends Component {
     {
         //region 弹窗展示脚本相关信息页面
 
-        let newScript = {snippets:{}};
+        let newScript:IScript = new IScript();
         let editor = <ScriptEditor mode={'create'} script={newScript}/>;
         let that = this;
         let m = Modal.info(
@@ -362,13 +433,13 @@ class InteractiveMovieScriptEditor extends Component {
     }
     //endregion
     //region 点击脚本的时候切换脚本
-    onClickScript(key)
+    onClickScript(key:any)
     {
         this.setState({currentSelectScriptId:key});
     }
     //endregion
     //region 在选择的脚本中添加片段信息
-    onClickAddSnippet(scriptId)
+    onClickAddSnippet(scriptId:any)
     {
         console.log('在脚本集:',scriptId+'中添加片段')
       //return 获取该节点到什么时间点结束
@@ -378,9 +449,9 @@ class InteractiveMovieScriptEditor extends Component {
       let moreThanThisNodeMinNode = this.state.currentMovie.duration;//大于当前选择的时间点的最近一个时间点是什么
       for (let i = 0; i < msKeys.length; i++) {
         let key = msKeys[i];
-        if (key>currentSelectedNode)
+        if (Number(key)>currentSelectedNode)
         {
-          if(key<moreThanThisNodeMinNode)
+          if(Number(key)<moreThanThisNodeMinNode)
           {
             moreThanThisNodeMinNode = parseFloat(key);
           }
@@ -402,24 +473,22 @@ class InteractiveMovieScriptEditor extends Component {
         return;
       }
 
-        let newSnippet = {
+        let newSnippet:ISnippet = {
             movieId:this.state.currentMovie.id,
             movieUrl:this.state.currentMovie.movieUrl,
           startTime:currentSelectedNode,
           endTime:moreThanThisNodeMinNode,
           actionAtEnd:'none',
-          redirectSnippetIndex:null,
-            transitionSnippetIndex:null,
             scriptId:scriptId,
         };
         this.showSnippetEditor(this.state.currentMovie.id, this.state.currentMovie.movieUrl,this.state.currentMovie.duration, scriptId,newSnippet,'create');
     }
-    showSnippetEditor(movieId,movieUrl,movieDuration, scriptId,newSnippet,mode)
+    showSnippetEditor(movieId:string,movieUrl:string,movieDuration:number, scriptId:string,newSnippet:ISnippet,mode:string)
     {
       // console.log('显示片段编辑器:', newSnippet);
 
       let that = this;
-        let editorRef = null;
+        let editorRef:SnippetEditor|null;
       let content = <SnippetEditor mode={mode}
                                    movieId={movieId}
                                    movieUrl={movieUrl}
@@ -433,7 +502,9 @@ class InteractiveMovieScriptEditor extends Component {
                                        {
                                            thisSc.snippets = {};
                                        }
-                                       delete thisSc.snippets[newSnippet.id];
+                                       if(newSnippet.id !== undefined)
+                                       {
+                                       delete thisSc.snippets[newSnippet.id];}
                                        that.setState({scripts:sc},()=>{
                                            message.success('删除片段'+newSnippet.id+'成功').then(r=>console.log(r))
                                            md.destroy();
@@ -487,7 +558,9 @@ class InteractiveMovieScriptEditor extends Component {
               {
                   thisSc.snippets = {};
               }
-              thisSc.snippets[newSnippet.id] = editorRef.state.snippet;
+              if(editorRef) {
+                  thisSc.snippets[newSnippet.id] = editorRef.state.snippet;
+              }
               //     {
               //     name:newSnippet.name,
               //     type:newSnippet.type,
@@ -521,7 +594,7 @@ class InteractiveMovieScriptEditor extends Component {
 success:()=>
 {
   message.success('保存脚本信息成功').then(r=>console.log(r));
-}
+},errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
 })
 await utils.doPost({
   api:'setting.save',
@@ -533,7 +606,7 @@ await utils.doPost({
   success:()=>
   {
     message.success('保存片源信息成功').then(r=>console.log(r));
-  }
+  },errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
 })
 }
   async onClickLoadFromCloudBtn(){
@@ -543,7 +616,7 @@ await utils.doPost({
                    {
                      settingName:'scripts',
                    },
-                 success:(ret)=>
+                 success:(ret:any)=>
 {
   if (ret && ret.SettingJson)
 {
@@ -553,7 +626,7 @@ await utils.doPost({
   message.success('加载云端脚本设置成功');
 }
 console.log('执行读取请求成功:', ret);
-}
+},errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
 })
 //region 加载保存的视频资源脚本
 await utils.doPost({
@@ -562,7 +635,7 @@ await utils.doPost({
     {
       settingName:'movieResources',
     },
-  success:(ret)=>
+  success:(ret:any)=>
   {
     if (ret && ret.SettingJson)
     {
@@ -572,7 +645,8 @@ await utils.doPost({
       message.success('加载云端电影片源设置成功');
     }
     console.log('执行读取请求成功:', ret);
-  }
+  },
+   errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
 })
 //endregion
 }
@@ -590,13 +664,13 @@ await utils.doPost({
         let onClickRemoveAnchorBtn = this.onClickRemoveAnchorBtn.bind(this);
         let onClickPreViewBtn = this.onClickPreViewBtn.bind(this);
         let sliderMarks = this.state.timeSliderMarks;
-        let onPlayerTimeUpdate = this.onPlayerTimeUpdate.bind(this);
+        // let onPlayerTimeUpdate = this.onPlayerTimeUpdate.bind(this);
         let onTimeNodeSliderAfterChange = this.onTimeNodeSliderAfterChange.bind(this);
         let moviesSources = this.state.moviesSources;
         let onClickAddMovieSourceBtn = this.onClickAddMovieSourceBtn.bind(this);
         let onClickMovieSourceBtn = this.onClickMovieSourceBtn.bind(this);
         // let onPlayerLoadStart = this.onPlayerLoadStart.bind(this);
-        let onPlayerLoadedMetadata = this.onPlayerLoadedMetadata.bind(this);
+        // let onPlayerLoadedMetadata = this.onPlayerLoadedMetadata.bind(this);
         let onClickScript = this.onClickScript.bind(this);
         const scripts = this.state.scripts;
         let currentSelectScriptId = this.state.currentSelectScriptId;
@@ -617,18 +691,18 @@ await utils.doPost({
                         poster={posterUrl}
                         autoPlay
                         src={movieUrl}
-                        onPause={this.onPlayerPause.bind(this)}
-                        onPlay={this.onPlayerPlay.bind(this)}
-                        onTimeUpdate={(e) => {
-                            onPlayerTimeUpdate(e)
-                        }}
+                        // onPause={this.onPlayerPause.bind(this)}
+                        // onPlay={this.onPlayerPlay.bind(this)}
+                        // onTimeUpdate={(e:any) => {
+                        //     onPlayerTimeUpdate(e)
+                        // }}
 
-                        onLoadedMetadata={onPlayerLoadedMetadata}
-                        className={classNames.main}
+                        // onLoadedMetadata={onPlayerLoadedMetadata}
+                        // className={classNames.main}
                     >
                         <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
                         </ControlBar>
-                        <BigPlayButton position={'hide'}/>
+                        <BigPlayButton position={'center'}/>
                     </Player>
                 </div>
                 <div id={'覆盖层各种工具栏'} className={classNames.toolsLayout}
@@ -646,7 +720,9 @@ await utils.doPost({
                                     }
                                     return <div key={index} id={'一个素材'} className={srcClass}
                                                 onClick={() => {
-                                                    onClickMovieSourceBtn(item, index)
+                                                    onClickMovieSourceBtn(item,
+                                                        // index
+                                                    )
                                                 }}
                                     >
                                         {item.name}
@@ -696,7 +772,7 @@ await utils.doPost({
                                   }}>查看脚本</Button>
                                   <Button onClick={
                                     ()=> {
-                                      let inputValue = null;
+                                      let inputValue:string;
                                       let setJsonMd = Modal.info(
                                         {
                                           title:'输入要解析的json',
@@ -771,7 +847,7 @@ await utils.doPost({
                                 Object.keys(scripts).map(
                                     (key)=>
                                     {
-                                        let obj = scripts[key];
+                                        let obj:IScript = scripts[key];
                                         if (!obj)
                                         {
                                             return null;
@@ -818,19 +894,23 @@ await utils.doPost({
                                                         return <div key={sKey} className={classNames.snippet}
                                                                     onClick={
                                                                       // ()=>this.setState({currentSelectedSnippet:obj.snippets[sKey]})
-                                                                      ()=>{
-                                                                          const getMovie=(movieId)=>{
+                                                                      ()=> {
+                                                                          const getMovie = (movieId?: string): IMovie | null => {
+                                                                              if(!movieId)
+                                                                                  return null;
                                                                               for (let i = 0; i < this.state.moviesSources.length; i++) {
-                                                                                  if(this.state.moviesSources[i].id === movieId)
-                                                                                  {
+                                                                                  if (this.state.moviesSources[i].id === movieId) {
                                                                                       return this.state.moviesSources[i];
                                                                                   }
                                                                               }
-                                                                              return {};
+                                                                              return null;
                                                                           }
                                                                           let movie = getMovie(obj.snippets[sKey].movieId);
                                                                           // console.log('获取电影的结果:',  obj.snippets[sKey]);
-                                                                          this.showSnippetEditor(movie.id,movie.movieUrl,movie.duration, key,obj.snippets[sKey],'edit')}
+                                                                          if (movie) {
+                                                                              this.showSnippetEditor(movie.id, movie.movieUrl, movie.duration, key, obj.snippets[sKey], 'edit')
+                                                                          }
+                                                                      }
                                                                     }
                                                         >
                                                             <div className={classNames.snippetTitle}>

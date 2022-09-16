@@ -11,12 +11,13 @@ export default class MovieScriptFactory {
           desc:desc,
           usedFor:usedFor,
           movieUrl:url,
-        posterUrl:poster,
-          extType:extType
+          posterUrl:poster,
+          extType:extType,
+          duration:duration
       };
-      if(!id)
+      if(!param.id)
       {
-          id=new Date().getDate();
+          param.id=''+new Date().getDate();
       }
     return param;
   }
