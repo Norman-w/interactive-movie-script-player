@@ -6,7 +6,7 @@ import 'antd/dist/antd.css'
 import {
     Player,
     ControlBar,
-    BigPlayButton,
+    BigPlayButton, PlayerReference, PlayerState,
 } from 'video-react';
 import "video-react/dist/video-react.css"; // import css
 import '../video-react-rewrite.css';
@@ -101,6 +101,12 @@ interface ISnippet
 const MySwal = withReactContent(Swal)
 
 class InteractiveMovieScriptEditor extends Component<IProp,IState> {
+    constructor(props:IProp) {
+        super(props);
+        this.player = null;
+        this.lastPlayerState = null;
+    }
+    lastPlayerState:PlayerState|null;
     state:IState = {
         currentMovie: new IMovie(),
         currentMovieState: null,
@@ -118,7 +124,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
         addScriptHover:false,
         onlySelectNode:false
     }
-    player:any;
+    player:PlayerReference|null;
     //视频文件是否正在加载中
     // movieLoading = false;
     //视频刚加载出来以后的状态信息,主要用于视频的时长获取并更新slider的长度信息
@@ -167,11 +173,12 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     //endregion
     //region 当时间轴发生鼠标抬起后变化的时候
     onTimeSliderAfterChange(e:any) {
+        if(!this.player) return;
         this.timeSliderSeeking = true;
         // console.log('松开的时候:',e);
         this.player.seek(e);
         this.setState({timeSliderValue: e});
-        let playerState = this.player.getState().player;
+        let playerState = this.player.getState();
         let paused = playerState.paused;
         // console.log(this.player);
         if (this.state.authPlayWhenSlid) {
@@ -191,6 +198,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     }
 
     onTimeNodeSliderAfterChange(e:any) {
+        if(!this.player)return;
         console.log(e)
         this.timeSliderSeeking = true;
         this.player.seek(e);
@@ -204,7 +212,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
             this.setState({timeSliderMarks:marks});
         }
 
-        let playerState = this.player.getState().player;
+        let playerState = this.player.getState();
         let paused = playerState.paused;
         // console.log(this.player);
         if (this.state.authPlayWhenSlid) {
@@ -244,6 +252,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     //endregion
     //region 点击了删除节点信息
     onClickRemoveAnchorBtn() {
+        if(!this.player)return;
         let playerState = this.player.getState();
         console.log(playerState)
         let marks = this.state.timeSliderMarks;
@@ -318,7 +327,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     //endregion
     //region 添加视频素材
     onClickAddMovieSourceBtn() {
-
+        if(!this.player)return;
         this.player.load();
         let movieUrl = 'https://www.enni.group/file/testmovie/' + (this.state.moviesSources.length + 2) + '.MP4';
         if(this.state.moviesSources.length === 0)
@@ -367,6 +376,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     //endregion
     //region 点击视频素材
     onClickMovieSourceBtn(item:IMovie) {
+        if(!this.player)return;
         this.setState({currentMovie: item});
         this.player.load();
     }
@@ -681,6 +691,19 @@ await utils.doPost({
             // return sec;
         // }
         //endregion
+        // if(this.player){
+        //     const newState = this.player.getState();
+        //     if(newState.paused && !this.lastPlayerState?.paused)
+        //     {
+        //         this.onPlayerPause.bind(this)();
+        //     }
+        //     else if(!newState.paused && this.lastPlayerState?.paused)
+        //     {
+        //         this.onPlayerPlay.bind(this)();
+        //     }
+        //     else if(this.lastPlayerState.)
+        // }
+        // @ts-ignore
         return (
             <div className={classNames.main}>
                 <div className={classNames.playerContent}>
@@ -691,14 +714,14 @@ await utils.doPost({
                         poster={posterUrl}
                         autoPlay
                         src={movieUrl}
-                        // onPause={this.onPlayerPause.bind(this)}
-                        // onPlay={this.onPlayerPlay.bind(this)}
-                        // onTimeUpdate={(e:any) => {
-                        //     onPlayerTimeUpdate(e)
-                        // }}
+                        onPause={this.onPlayerPause.bind(this)}
+                        onPlay={this.onPlayerPlay.bind(this)}
+                        onTimeUpdate={(e:any) => {
+                            this.onPlayerTimeUpdate.bind(this)(e)
+                        }}
 
-                        // onLoadedMetadata={onPlayerLoadedMetadata}
-                        // className={classNames.main}
+                        onLoadedMetadata={this.onPlayerLoadedMetadata.bind(this)}
+                        className={classNames.main}
                     >
                         <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
                         </ControlBar>
