@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Input,Slider, Button, Switch, Modal, message} from 'antd';
+import {Input,Slider, Button, Switch, Modal, message, Tabs} from 'antd';
 import classNames from './InteractiveMovieScriptEditor.module.css';
 import 'antd/dist/antd.css'
 //region  video-react的引用
@@ -19,13 +19,12 @@ import withReactContent from 'sweetalert2-react-content'
 
 import MovieScriptFactory from '../movieScriptFactory' ;
 // import JsonComparer from "../utils/jsonComparer";
-import InteractiveMovieScriptPlayer from "../player/InteractiveMovieScriptPlayer";
 import Splitter from "./Splitter";
 import ScriptEditor from "./ScriptEditor";
 import SnippetEditor from "./SnippetEditor";
 import JSONResult from "../utils/JSONResult";
 import utils from "../utils/utils";
-import scriptProcessor from '../processor/QPScriptProcessor';
+import ScriptFlowPanel from '../graph/ScriptFlowPanel';
 
 
 //region start and prop interface
@@ -46,6 +45,7 @@ interface IState
     //已经添加到当前编辑器中的视频素材列表
     moviesSources: IMovie[],
     onlySelectNode:any,
+    mainEditorTab: 'timeline' | 'flow',
 }
 interface IProp
 {
@@ -122,7 +122,8 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
         //已经添加到当前编辑器中的视频素材列表
         moviesSources: [],
         addScriptHover:false,
-        onlySelectNode:false
+        onlySelectNode:false,
+        mainEditorTab: 'timeline',
     }
     player:PlayerReference|null;
     //视频文件是否正在加载中
@@ -296,32 +297,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     viewPlayer:any;
 
     onClickPreViewBtn() {
-      // console.log('点击预览按钮,将要进行脚本的预览,给定的scripts是:', this.state.scripts);
-        if (!this.viewPlayer) {
-            this.viewPlayer = <InteractiveMovieScriptPlayer scripts={this.state.scripts}
-                                                            entrySnippetIndex={'introduce.initMovieSet1.info.introduce'}
-              // entrySnippetIndex={'autoPrintRule.initMovieSet7.questionWithWaiter.howMuchUseQPPaper'}
-                                                            getInteractionDomFunc={
-                                                              scriptProcessor.getInteractionDom.bind(this)
-                                                            }/>;
-        }
-        MySwal.fire({
-            // title: <p>Hello World</p>,
-            html:
-            this.viewPlayer,
-            // footer: 'Copyright 2018',
-            showConfirmButton: false,
-
-            width: 1000,
-            // height: 800,
-            didOpen: () => {
-                // `MySwal` is a subclass of `Swal`
-                //   with all the same instance & static methods
-                // MySwal.clickConfirm()
-            }
-        }).then(() => {
-            // return MySwal.fire(<p>Shorthand works too</p>)
-        })
+        this.setState({ mainEditorTab: 'flow' });
     }
 
     //endregion
@@ -632,7 +608,12 @@ await utils.doPost({
 {
   let retJson = decodeURIComponent(ret.SettingJson);
   let jsonObj = JSON.parse(retJson);
-  this.setState({scripts: jsonObj});
+  const scriptKeys = Object.keys(jsonObj);
+  const firstScriptId = scriptKeys.length > 0 ? scriptKeys[0] : '';
+  this.setState({
+    scripts: jsonObj,
+    currentSelectScriptId: this.state.currentSelectScriptId || firstScriptId,
+  });
   message.success('加载云端脚本设置成功');
 }
 console.log('执行读取请求成功:', ret);
@@ -651,7 +632,13 @@ await utils.doPost({
     {
       let retJson = decodeURIComponent(ret.SettingJson);
       let jsonObj = JSON.parse(retJson);
-      this.setState({moviesSources: jsonObj});
+      const firstMovie = jsonObj.length > 0 ? jsonObj[0] : null;
+      this.setState((prev) => ({
+        moviesSources: jsonObj,
+        currentMovie: firstMovie && !prev.currentMovie.movieUrl
+          ? Object.assign(new IMovie(), firstMovie)
+          : prev.currentMovie,
+      }));
       message.success('加载云端电影片源设置成功');
     }
     console.log('执行读取请求成功:', ret);
@@ -662,303 +649,249 @@ await utils.doPost({
 }
   //endregion
 
-    render() {
-      //region 变量定义和绑定
-        let movieUrl = this.state.currentMovie.movieUrl;
-        let posterUrl = this.state.currentMovie.posterUrl;
-        let duration = this.state.currentMovie.duration;
+    onScriptsChangeFromFlow = (scripts: IState['scripts']) => {
+        this.setState({ scripts });
+        this.save();
+    }
+
+    renderTimelineTools() {
         let onAutoPlayChange = this.onAutoPlayChange.bind(this);
-        let onSelectModeChange = this.onSelectModeChange.bind(this);
         let onClickAddAnchorBtn = this.onClickAddAnchorBtn.bind(this);
         let onClickAddScriptBtn = this.onClickAddScriptBtn.bind(this);
         let onClickRemoveAnchorBtn = this.onClickRemoveAnchorBtn.bind(this);
         let onClickPreViewBtn = this.onClickPreViewBtn.bind(this);
         let sliderMarks = this.state.timeSliderMarks;
-        // let onPlayerTimeUpdate = this.onPlayerTimeUpdate.bind(this);
         let onTimeNodeSliderAfterChange = this.onTimeNodeSliderAfterChange.bind(this);
         let moviesSources = this.state.moviesSources;
         let onClickAddMovieSourceBtn = this.onClickAddMovieSourceBtn.bind(this);
         let onClickMovieSourceBtn = this.onClickMovieSourceBtn.bind(this);
-        // let onPlayerLoadStart = this.onPlayerLoadStart.bind(this);
-        // let onPlayerLoadedMetadata = this.onPlayerLoadedMetadata.bind(this);
         let onClickScript = this.onClickScript.bind(this);
         const scripts = this.state.scripts;
         let currentSelectScriptId = this.state.currentSelectScriptId;
-        // let tipFormatter = (value) => {
-        //     let sec = value / 1000;
-        //     let mil = value%1000;
-        //     return ''+sec+'.'+mil;
-            // return sec;
-        // }
-        //endregion
-        // if(this.player){
-        //     const newState = this.player.getState();
-        //     if(newState.paused && !this.lastPlayerState?.paused)
-        //     {
-        //         this.onPlayerPause.bind(this)();
-        //     }
-        //     else if(!newState.paused && this.lastPlayerState?.paused)
-        //     {
-        //         this.onPlayerPlay.bind(this)();
-        //     }
-        //     else if(this.lastPlayerState.)
-        // }
-        return (
-            <div className={classNames.main}>
-                <div className={classNames.playerContent}>
-                    <Player
-                        ref={c => {
-                            this.player = c;
-                        }}
-                        poster={posterUrl}
-                        autoPlay
-                        src={movieUrl}
-                        onPause={this.onPlayerPause.bind(this)}
-                        onPlay={this.onPlayerPlay.bind(this)}
-                        onTimeUpdate={(e:any) => {
-                            this.onPlayerTimeUpdate.bind(this)(e)
-                        }}
+        let duration = this.state.currentMovie.duration;
 
-                        onLoadedMetadata={this.onPlayerLoadedMetadata.bind(this)}
-                        className={classNames.main}
-                    >
-                        <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true}>
-                        </ControlBar>
-                        <BigPlayButton position={'center'}/>
-                    </Player>
-                </div>
-                <div id={'覆盖层各种工具栏'} className={classNames.toolsLayout}
-                     // onClick={
-                     //   ()=>{this.player.play()}
-                     // }
-                >
-                    <div id={'影片文件素材列表'} className={classNames.leftColumn}>
-                        <div className={classNames.srcListLineContent}>
-                            {
-                                moviesSources.map((item, index) => {
-                                    let srcClass = classNames.srcElem;
-                                    if (item.id === this.state.currentMovie.id) {
-                                        srcClass = classNames.srcElemCurrent;
-                                    }
-                                    return <div key={index} id={'一个素材'} className={srcClass}
-                                                onClick={() => {
-                                                    onClickMovieSourceBtn(item,
-                                                        // index
-                                                    )
-                                                }}
-                                    >
-                                        {item.name}
-                                    </div>
-                                })
-                            }
-                          <Button onClick={onClickAddMovieSourceBtn} style={{marginTop:20}} type={'primary'}>添加视频</Button>
-                        </div>
-                    </div>
-                    <div id={'中间的工具栏'} className={classNames.midColumn}>
-                        <div id={'上方信息栏'} className={classNames.infoLine}>
-                            <div>
-                                当前视频:{this.state.currentMovie.id}
-                            </div>
-                            <div>
-                                当前节点:{this.state.currentSelectedNode}
-                            </div>
-                            <div>
-                                当前脚本:{currentSelectScriptId}
-                            </div>
-                        </div>
-                        <div id={'下方时间轴和按钮'} className={classNames.editorBottomLineContent}>
-                            <div id={'编辑器内部'} className={classNames.editorContent}>
-                                <div id={'按钮集'} className={classNames.buttons}>
-                                    <Button onClick={this.onClickSave2CloudBtn.bind(this)}>
-                                        云保存
-                                    </Button>
-                                    <Button onClick={this.onClickLoadFromCloudBtn.bind(this)}>
-                                        云读取
-                                    </Button>
-                                  <Button onClick={()=>{
-                                    let md = Modal.info({
-                                      icon:null,
-                                      content:<JSONResult json={
-  // JSON.stringify(this.state.scripts)
-  this.state.scripts
-}/>,
-                                      closable:true,
-                                      maskClosable:true,
-                                      width:'100%',
-                                      okType:"ghost",
-                                      onOk:(e)=>{
-                                          console.log(JSON.stringify(this.state.scripts),e);
-                                        md.destroy();
-                                      }
-                                    })
-                                  }}>查看脚本</Button>
-                                  <Button onClick={
-                                    ()=> {
-                                      let inputValue:string;
-                                      let setJsonMd = Modal.info(
-                                        {
-                                          title:'输入要解析的json',
-                                          content:<Input onChange={(e) => {
-  inputValue = e.target.value;
-  console.log('输入了内容:', e.target.value);
-}}/>,
-                                          onOk:(e)=>
-                                          {
-                                            console.log('e是:',e);
-                                            let json = JSON.parse(inputValue);
-                                            if(!json || Object.keys(json).length<1)
-                                            {
-                                              message.error('输入的脚本json无效').then(r=>console.log(r));
-                                            }
-                                            else {
-                                              console.log('json是:', json);
-                                              this.setState({scripts:json});
-                                              this.save();
-                                              setJsonMd.destroy();
-                                            }
-                                          }
-                                        }
-                                      )
-                                    }
-                                  }>设置脚本</Button>
-                                    <Button onClick={()=>{localStorage.clear();message.success('缓存已清空').then(r=>console.log(r));this.load()}}>清空缓存</Button>
-                                    <div className={classNames.lineFlexRow}>
-                                        <div>拖拽后自动播放</div>
-                                        <Switch checked={this.state.authPlayWhenSlid} defaultChecked size={'small'}
-                                                onChange={onAutoPlayChange}/></div>
-                                    <Button onClick={onClickAddAnchorBtn}>添加节点</Button>
-                                    <Button onClick={onClickAddScriptBtn}>添加脚本</Button>
-                                    <Button onClick={onClickRemoveAnchorBtn}>删除节点</Button>
-                                    <Button onClick={onClickPreViewBtn}>预览</Button>
+        return (
+            <div id={'覆盖层各种工具栏'} className={classNames.toolsLayout}>
+                <div id={'影片文件素材列表'} className={classNames.leftColumn}>
+                    <div className={classNames.srcListLineContent}>
+                        {
+                            moviesSources.map((item, index) => {
+                                let srcClass = classNames.srcElem;
+                                if (item.id === this.state.currentMovie.id) {
+                                    srcClass = classNames.srcElemCurrent;
+                                }
+                                return <div key={index} id={'一个素材'} className={srcClass}
+                                            onClick={() => {
+                                                onClickMovieSourceBtn(item)
+                                            }}
+                                >
+                                    {item.name}
                                 </div>
-                                <div id={'时间轴'} className={classNames.timeSlider}>
-                                    <Slider
-                                        step={0.001}
-                                        value={this.state.timeSliderValue}
+                            })
+                        }
+                      <Button onClick={onClickAddMovieSourceBtn} style={{marginTop:20}} type={'primary'}>添加视频</Button>
+                    </div>
+                </div>
+                <div id={'中间的工具栏'} className={classNames.midColumn}>
+                    <div id={'上方信息栏'} className={classNames.infoLine}>
+                        <div>当前视频:{this.state.currentMovie.id}</div>
+                        <div>当前节点:{this.state.currentSelectedNode}</div>
+                        <div>当前脚本:{currentSelectScriptId}</div>
+                    </div>
+                    <div id={'下方时间轴和按钮'} className={classNames.editorBottomLineContent}>
+                        <div id={'编辑器内部'} className={classNames.editorContent}>
+                            <div id={'按钮集'} className={classNames.buttons}>
+                                <Button onClick={this.onClickSave2CloudBtn.bind(this)}>云保存</Button>
+                                <Button onClick={this.onClickLoadFromCloudBtn.bind(this)}>云读取</Button>
+                                <Button onClick={()=>{
+                                  let md = Modal.info({
+                                    icon:null,
+                                    content:<JSONResult json={this.state.scripts}/>,
+                                    closable:true,
+                                    maskClosable:true,
+                                    width:'100%',
+                                    okType:"ghost",
+                                    onOk:(e)=>{
+                                        console.log(JSON.stringify(this.state.scripts),e);
+                                      md.destroy();
+                                    }
+                                  })
+                                }}>查看脚本</Button>
+                                <Button onClick={()=> {
+                                  let inputValue:string;
+                                  let setJsonMd = Modal.info({
+                                    title:'输入要解析的json',
+                                    content:<Input onChange={(e) => { inputValue = e.target.value; }}/>,
+                                    onOk:()=> {
+                                      let json = JSON.parse(inputValue);
+                                      if(!json || Object.keys(json).length<1) {
+                                        message.error('输入的脚本json无效').then(r=>console.log(r));
+                                      } else {
+                                        this.setState({scripts:json});
+                                        this.save();
+                                        setJsonMd.destroy();
+                                      }
+                                    }
+                                  })
+                                }}>设置脚本</Button>
+                                <Button onClick={()=>{localStorage.clear();message.success('缓存已清空').then(r=>console.log(r));this.load()}}>清空缓存</Button>
+                                <div className={classNames.lineFlexRow}>
+                                    <div>拖拽后自动播放</div>
+                                    <Switch checked={this.state.authPlayWhenSlid} defaultChecked size={'small'}
+                                            onChange={onAutoPlayChange}/></div>
+                                <Button onClick={onClickAddAnchorBtn}>添加节点</Button>
+                                <Button onClick={onClickAddScriptBtn}>添加脚本</Button>
+                                <Button onClick={onClickRemoveAnchorBtn}>删除节点</Button>
+                                <Button onClick={onClickPreViewBtn}>预览</Button>
+                            </div>
+                            <div id={'时间轴'} className={classNames.timeSlider}>
+                                <Slider step={0.001} value={this.state.timeSliderValue}
                                         onChange={this.onTimeSliderChange.bind(this)}
                                         onAfterChange={this.onTimeSliderAfterChange.bind(this)}
-                                        max={duration}
-                                    />
-                                </div>
-                                <div id={'已选择节点的时间轴'} className={classNames.timeSlider}>
-                                    <Slider
-                                        step={1}
+                                        max={duration}/>
+                            </div>
+                            <div id={'已选择节点的时间轴'} className={classNames.timeSlider}>
+                                <Slider step={1}
                                         onChange={e=>{
-                                            // console.log('当前选中的节点是', e)
-                                            if (this.state.timeSliderMarks[e])
-                                            {
-                                                console.log('选中的节点是mark:', e);
+                                            if (this.state.timeSliderMarks[e]) {
                                                 this.setState({currentSelectedNode:e});
                                             }
                                         }}
                                         onAfterChange={onTimeNodeSliderAfterChange}
                                         max={duration}
                                         marks={sliderMarks}
-                                        included={false}
-                                    />
-                                </div>
-                                <div id={'自己写的时间节点编辑器'} className={classNames.timeSlider}>
-                                    <Splitter/>
-                                </div>
+                                        included={false}/>
+                            </div>
+                            <div id={'自己写的时间节点编辑器'} className={classNames.timeSlider}>
+                                <Splitter/>
                             </div>
                         </div>
                     </div>
-                    <div id={'右侧的工具栏'} className={classNames.rightColumn}>
-                        <div id={'脚本列表集合'} className={classNames.scriptListContent}>
-                            {
-                                Object.keys(scripts).map(
-                                    (key)=>
-                                    {
-                                        let obj:IScript = scripts[key];
-                                        if (!obj)
+                </div>
+                <div id={'右侧的工具栏'} className={classNames.rightColumn}>
+                    <div id={'脚本列表集合'} className={classNames.scriptListContent}>
+                        {
+                            Object.keys(scripts).map((key)=> {
+                                let obj:IScript = scripts[key];
+                                if (!obj) return null;
+                                let scriptClass = classNames.script;
+                                let addSnippetBtn = null;
+                                if (currentSelectScriptId===key) {
+                                    scriptClass = classNames.scriptCurrent;
+                                    addSnippetBtn = <div className={classNames.addSnippetBtn}
+                                                         onClick={()=>{ this.onClickAddSnippet(key); }}>+</div>
+                                }
+                                return <div key={key} className={scriptClass}
+                                            onClick={()=>{onClickScript(key)}}>
+                                  <div className={classNames.deleteScriptBtn}
+                                       hidden={currentSelectScriptId!==key}
+                                       onClick={()=>{
+                                         Modal.warn({
+                                           title:'确认要删除此脚本吗?',
+                                           okCancel:true,
+                                           okText:'删除',
+                                           cancelText:'取消',
+                                           onOk:()=> {
+                                             delete scripts[key];
+                                             this.setState({scripts: scripts});
+                                           }
+                                         })
+                                       }}>删除</div>
+                                    <div id={'脚本标题'} className={classNames.scriptTitle}>{key}</div>
+                                    <div id={'脚本副标题'} className={classNames.scriptSubTitle}>{obj.name}</div>
+                                    <div id={'片段列表容器'} className={classNames.snippetListContent}>
                                         {
-                                            return null;
-                                        }
-                                        let scriptClass = classNames.script;
-                                        let addSnippetBtn = null;
-                                        if (currentSelectScriptId===key)
-                                        {
-                                            scriptClass = classNames.scriptCurrent;
-                                            addSnippetBtn = <div className={classNames.addSnippetBtn}
-                                                                 onClick={()=>{
-                                                                     this.onClickAddSnippet(key);
-                                                                 }}
-                                            >+</div>
-                                        }
-                                        return <div key={key} className={scriptClass}
-                                                    onClick={()=>{onClickScript(key)}}
-                                        >
-                                          <div className={classNames.deleteScriptBtn}
-                                               hidden={currentSelectScriptId!==key}
-                                               onClick={()=>{
-                                                 Modal.warn({
-                                                   title:'确认要删除此脚本吗?',
-                                                   okCancel:true,
-                                                   okText:'删除',
-                                                   cancelText:'取消',
-                                                   onOk:()=>
-                                                   {
-                                                     delete scripts[key];
-                                                     this.setState({scripts: scripts});
-                                                   }
-                                                 })
-                                               }}
-                                          >
-                                            删除
-                                          </div>
-
-                                            <div id={'脚本标题'} className={classNames.scriptTitle}>{key}</div>
-                                            <div id={'脚本副标题'} className={classNames.scriptSubTitle}>{obj.name}</div>
-                                            <div id={'片段列表容器'} className={classNames.snippetListContent}>
-                                                {/*<div className={classNames.snippet}></div>*/}
-                                                {
-                                                    Object.keys(obj.snippets?obj.snippets:[]).map((sKey) => {
-                                                        return <div key={sKey} className={classNames.snippet}
-                                                                    onClick={
-                                                                      // ()=>this.setState({currentSelectedSnippet:obj.snippets[sKey]})
-                                                                      ()=> {
-                                                                          const getMovie = (movieId?: string): IMovie | null => {
-                                                                              if(!movieId)
-                                                                                  return null;
-                                                                              for (let i = 0; i < this.state.moviesSources.length; i++) {
-                                                                                  if (this.state.moviesSources[i].id === movieId) {
-                                                                                      return this.state.moviesSources[i];
-                                                                                  }
-                                                                              }
-                                                                              return null;
-                                                                          }
-                                                                          let movie = getMovie(obj.snippets[sKey].movieId);
-                                                                          // console.log('获取电影的结果:',  obj.snippets[sKey]);
-                                                                          if (movie) {
-                                                                              this.showSnippetEditor(movie.id, movie.movieUrl, movie.duration, key, obj.snippets[sKey], 'edit')
-                                                                          }
-                                                                      }
+                                            Object.keys(obj.snippets?obj.snippets:[]).map((sKey) => {
+                                                return <div key={sKey} className={classNames.snippet}
+                                                            onClick={()=> {
+                                                                const getMovie = (movieId?: string): IMovie | null => {
+                                                                    if(!movieId) return null;
+                                                                    for (let i = 0; i < this.state.moviesSources.length; i++) {
+                                                                        if (this.state.moviesSources[i].id === movieId) {
+                                                                            return this.state.moviesSources[i];
+                                                                        }
                                                                     }
-                                                        >
-                                                            <div className={classNames.snippetTitle}>
-                                                                {obj.snippets[sKey].name}
-                                                            </div>
-                                                            <div className={classNames.snippetSubTitle}>
-                                                                {obj.snippets[sKey].type}
-                                                            </div>
-                                                        </div>
-                                                    })
-                                                }
-                                                {addSnippetBtn}
-                                            </div>
-                                        </div>
-                                    }
-                                )
-                            }
-
-                            <div id={'添加脚本按钮'} className={this.state.addScriptHover? classNames.scriptAddBtnHover: classNames.scriptAddBtn} onClick={onClickAddScriptBtn}
-                                 onMouseEnter={()=>{this.setState({addScriptHover:true})}}
-                                 onMouseLeave={()=>{this.setState({addScriptHover:false})}}
-                            >+</div>
-                        </div>
+                                                                    return null;
+                                                                }
+                                                                let movie = getMovie(obj.snippets[sKey].movieId);
+                                                                if (movie) {
+                                                                    this.showSnippetEditor(movie.id, movie.movieUrl, movie.duration, key, obj.snippets[sKey], 'edit')
+                                                                }
+                                                            }}>
+                                                    <div className={classNames.snippetTitle}>{obj.snippets[sKey].name}</div>
+                                                    <div className={classNames.snippetSubTitle}>{obj.snippets[sKey].type}</div>
+                                                </div>
+                                            })
+                                        }
+                                        {addSnippetBtn}
+                                    </div>
+                                </div>
+                            })
+                        }
+                        <div id={'添加脚本按钮'} className={this.state.addScriptHover? classNames.scriptAddBtnHover: classNames.scriptAddBtn}
+                             onClick={onClickAddScriptBtn}
+                             onMouseEnter={()=>{this.setState({addScriptHover:true})}}
+                             onMouseLeave={()=>{this.setState({addScriptHover:false})}}>+</div>
                     </div>
                 </div>
+            </div>
+        );
+    }
 
+    render() {
+        let movieUrl = this.state.currentMovie.movieUrl;
+        let posterUrl = this.state.currentMovie.posterUrl;
+        const { mainEditorTab, currentSelectScriptId, scripts, moviesSources } = this.state;
+
+        const tabItems = [
+            {
+                key: 'timeline',
+                label: '时间轴',
+                children: this.renderTimelineTools(),
+            },
+            {
+                key: 'flow',
+                label: '蓝图编排',
+                children: (
+                    <div className={classNames.flowTabWrap}>
+                        <ScriptFlowPanel
+                            scripts={scripts}
+                            movieResources={moviesSources}
+                            onScriptsChange={this.onScriptsChangeFromFlow}
+                        />
+                    </div>
+                ),
+            },
+        ];
+
+        return (
+            <div className={classNames.main}>
+                {mainEditorTab === 'timeline' && (
+                    <div className={classNames.playerContent}>
+                        <Player
+                            ref={c => { this.player = c; }}
+                            poster={posterUrl}
+                            autoPlay
+                            src={movieUrl}
+                            onPause={this.onPlayerPause.bind(this)}
+                            onPlay={this.onPlayerPlay.bind(this)}
+                            onTimeUpdate={(e:any) => { this.onPlayerTimeUpdate.bind(this)(e) }}
+                            onLoadedMetadata={this.onPlayerLoadedMetadata.bind(this)}
+                            className={classNames.main}
+                        >
+                            <ControlBar autoHide={false} disableDefaultControls={true} disableCompletely={true} />
+                            <BigPlayButton position={'center'}/>
+                        </Player>
+                    </div>
+                )}
+                <div className={classNames.editorTabsWrap}>
+                    <Tabs
+                        activeKey={mainEditorTab}
+                        onChange={(key) => this.setState({ mainEditorTab: key as 'timeline' | 'flow' })}
+                        className={classNames.editorTabs}
+                        items={tabItems}
+                    />
+                </div>
             </div>
         );
     }

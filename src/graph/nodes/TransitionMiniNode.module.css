@@ -1,0 +1,70 @@
+.node {
+  width: 88px;
+  min-height: 52px;
+  padding: 6px 8px;
+  border: 2px solid #8c8c8c;
+  border-radius: 6px;
+  background: #f0f0f0;
+  font-size: 10px;
+  line-height: 1.35;
+  position: relative;
+  text-align: center;
+  transition: opacity 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dimmed {
+  opacity: 0.28;
+  filter: grayscale(0.4);
+}
+
+.focusActive {
+  border-style: solid !important;
+  border-width: 3px !important;
+  animation: focusBorderBlink 1.1s ease-in-out infinite;
+}
+
+.upcoming {
+  border-style: dashed !important;
+  border-width: 2px !important;
+}
+
+@keyframes focusBorderBlink {
+  0%,
+  100% {
+    border-color: #52c41a;
+    box-shadow: 0 0 6px 1px rgba(82, 196, 26, 0.55);
+  }
+  50% {
+    border-color: #b7eb8f;
+    box-shadow: 0 0 14px 3px rgba(82, 196, 26, 0.85);
+  }
+}
+
+.badge {
+  display: inline-block;
+  padding: 0 5px;
+  margin-bottom: 3px;
+  background: #595959;
+  color: #fff;
+  font-size: 9px;
+  border-radius: 3px;
+  line-height: 14px;
+}
+
+.title {
+  font-weight: 600;
+  font-size: 10px;
+  word-break: break-all;
+}
+
+.handleIn {
+  background: #8c8c8c !important;
+  width: 8px !important;
+  height: 8px !important;
+}
+
+.handleOut {
+  background: #8c8c8c !important;
+  width: 8px !important;
+  height: 8px !important;
+}

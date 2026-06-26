@@ -58,6 +58,9 @@ class InteractiveMovieScriptPlayer extends Component {
     {
       this.setState({currentSnippet:first});
       this.snippetPlayer.changeSnippet(first,true);
+      if (this.props.onSnippetChange) {
+        this.props.onSnippetChange(first.index);
+      }
       console.log('设置第一播放片段为:',first);
     }
     else
@@ -185,6 +188,9 @@ class InteractiveMovieScriptPlayer extends Component {
     // console.log('要播放的新片段是:',this.snippetsDic)
     this.setState({currentSnippet:newSnippet})
     this.snippetPlayer.changeSnippet(newSnippet,true);
+    if (this.props.onSnippetChange) {
+      this.props.onSnippetChange(index);
+    }
   }
   //endregion
 

@@ -1,0 +1,14 @@
+.flowOverlay {
+  animation: pipeFlowDash 0.55s linear infinite;
+}
+
+.flowChevrons {
+  animation: pipeFlowDash 0.45s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes pipeFlowDash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}

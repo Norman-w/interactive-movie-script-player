@@ -2,14 +2,14 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
 import InteractiveMovieScriptEditor from './editor/InteractiveMovieScriptEditor';
-// import TimeSelector from "./component/TimeSelector";
+import DetachedFlowPreviewPage from './graph/preview/DetachedFlowPreviewPage';
+import { isDetachedFlowPreviewUrl } from './graph/preview/previewSync';
 
-ReactDOM.render(
-    <InteractiveMovieScriptEditor />,
-  // <TimeSelector time={{hour:0, Fminute:48, round: 1}} debug={false}></TimeSelector>,
-  document.getElementById('root')
-);
-// if (module.hot)
-// {
-//   module.hot.accept();
-// }
+const rootElement = document.getElementById('root');
+
+if (rootElement) {
+  ReactDOM.render(
+    isDetachedFlowPreviewUrl() ? <DetachedFlowPreviewPage /> : <InteractiveMovieScriptEditor />,
+    rootElement
+  );
+}
