@@ -2,7 +2,7 @@ const getImseConfig = () => (typeof window !== 'undefined' && window.__IMSE_CONF
 
 class Utils {
     isDebugMode=false
-    normalizeImseMediaUrls = (value) => {
+    normalizeImseMovieUrl = (value) => {
         if (typeof value === 'string') {
             const config = getImseConfig();
             const prefix = config.legacyMovieUrlPrefix;
@@ -15,13 +15,18 @@ class Utils {
             }
             return value;
         }
+        return value;
+    }
+    normalizeImseMediaUrls = (value) => {
         if (Array.isArray(value)) {
             return value.map(item => this.normalizeImseMediaUrls(item));
         }
         if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
             return Object.fromEntries(Object.entries(value).map(([key, item]) => [
                 key,
-                this.normalizeImseMediaUrls(item)
+                key === 'movieUrl'
+                    ? this.normalizeImseMovieUrl(item)
+                    : this.normalizeImseMediaUrls(item)
             ]));
         }
         return value;
