@@ -1,5 +1,31 @@
+const getImseConfig = () => (typeof window !== 'undefined' && window.__IMSE_CONFIG__) || {};
+
 class Utils {
     isDebugMode=false
+    normalizeImseMediaUrls = (value) => {
+        if (typeof value === 'string') {
+            const config = getImseConfig();
+            const prefix = config.legacyMovieUrlPrefix;
+            if (prefix && value.startsWith(prefix)) {
+                const fileName = value.slice(prefix.length);
+                const resourceId = (config.legacyMovieFiles || {})[fileName];
+                if (resourceId) {
+                    return `${config.movieMediaUrlPrefix || '/media/'}${encodeURIComponent(resourceId)}`;
+                }
+            }
+            return value;
+        }
+        if (Array.isArray(value)) {
+            return value.map(item => this.normalizeImseMediaUrls(item));
+        }
+        if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
+            return Object.fromEntries(Object.entries(value).map(([key, item]) => [
+                key,
+                this.normalizeImseMediaUrls(item)
+            ]));
+        }
+        return value;
+    }
     checkMobile = (mobile) => {
         let a = mobile;
         let isNum = /^\d+$/.test(a);
@@ -37,93 +63,33 @@ class Utils {
     }
     return ret;
   }
-    doPost2 = function ({api, params, success, errProcFunc, failProcFunc, session}) {
-        // let url = 'https://www.enni.group/interactivemoviescripteditor/';
-        let url='https://www.enni.group/netserver/router.aspx'
-        if (params)
-        {
-            params['method'] = api;
+    doPost = async function ({api, params, success, errProcFunc, failProcFunc, routerUrl}) {
+        const url = routerUrl || getImseConfig().settingsApiUrl || '/InteractiveMovieScriptEditor/Default.aspx';
+        const requestParams = Object.assign({}, params || {}, {method: api});
 
-        }
-
-        fetch(url,{method:'POST',mode:'cors',headers:{'Content-Type': 'application/json'}, body:params},).then(
-            response => {
-                console.log('fetch的response是:',response);
-                let json = response.json();
-                console.log('fetch的response.json()是', json);
-                return json;
-            }
-        ).then(
-            // data=>console.log('fetch后的结果是:',data)
-            (data) => {
-                if (data) {
-                    if (this.debugMode)
-                        console.log('获取到data:', data);
-                    if (data.IsError === true)// || !data.ErrMsg || !data.ErrCode)
-                    {
-                        if (errProcFunc) {
-                            errProcFunc(data)
-                        } else {
-                            console.warn(JSON.stringify(data));
-                            if (this.debugMode)
-                                console.log('%c在home.js中未获取到错误处理函数,由控制台输出,request发生错误:' + data.ErrMsg, 'color:red;font-size:12px');
-                        }
-                    } else {
-                        if (success) {
-                            success(data);
-                        }
-                    }
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(requestParams)
+            });
+            const data = await response.json();
+            if (data && data.IsError === true) {
+                if (errProcFunc) {
+                    errProcFunc(data);
                 } else {
-                    if (failProcFunc) {
-                        failProcFunc();
+                    console.warn(JSON.stringify(data));
+                    if (this.debugMode) {
+                        console.log('%cIMSE 设置请求失败:' + data.ErrMsg, 'color:red;font-size:12px');
                     }
                 }
+            } else if (success) {
+                success(data);
             }
-        ).catch((e)=>
-        {
-            console.error('app.js,fetch获取到json,进行回调函数的调用时发生错误e:',e,
-                '请求名称:',api,
-                '参数集:',params,
-                '执行成功回调函数:', success,
-                '服务器返回错误消息回调函数:',errProcFunc,
-                '发生网络等错误回调函数:',failProcFunc,
-                '授权码:',session,
-                'url:', url
-            );
-        });
-    }
-     doPost = async function ({api, params, success, errProcFunc, failProcFunc, session,routerUrl}) {
-        let url = 'https://www.enni.group/interactivemoviescripteditor/';
-        if (routerUrl)
-        {
-          url = routerUrl;
+        } catch (error) {
+            console.error('IMSE settings request failed:', api, error && error.name ? error.name : 'Error');
+            if (failProcFunc) failProcFunc(error);
         }
-        if (params)
-        {
-            params['method'] = api;
-          if (session)
-          {
-            params['session'] = session;
-          }
-        }
-        let ft = fetch(url,{method:'POST',headers:{'Content-Type': 'application/json'}, body:JSON.stringify(params)})
-            let ft2= (await ft);
-        let data = (await ft2.json())
-         console.log('doPost结束后 data是:',data);
-         if (data.IsError === true)// || !data.ErrMsg || !data.ErrCode)
-         {
-             if (errProcFunc) {
-                 errProcFunc(data)
-             } else {
-                 console.warn(JSON.stringify(data));
-                 if (this.debugMode)
-                     console.log('%c在home.js中未获取到错误处理函数,由控制台输出,request发生错误:' + data.ErrMsg, 'color:red;font-size:12px');
-             }
-         } else {
-             if (success) {
-                 success(data);
-             }
-         }
     }
     //region 让input的输入数字只能是大于0以上的数字. 如果是空字符串 就返回null.
   limitNumber = (value, min,max) =>{

@@ -1,0 +1,25 @@
+[Unit]
+Description=Enni IMSE settings API staging service
+After=network.target
+
+[Service]
+Type=simple
+User=enni-imse
+Group=enni-imse
+WorkingDirectory=/opt/enni-imse
+EnvironmentFile=/etc/enni/imse.env
+ExecStart=/usr/bin/dotnet /opt/enni-imse/IMSEModern.dll
+Restart=on-failure
+RestartSec=3
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/enni-imse
+MemoryMax=256M
+TasksMax=64
+
+[Install]
+WantedBy=multi-user.target

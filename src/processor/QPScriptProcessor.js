@@ -7,35 +7,10 @@ import PerSpanPrint from "./QPScriptInteractors/PerSpanPrint";
 import PerCountPrint from "./QPScriptInteractors/PerCountPrint";
 import UseQPPaper from "./QPScriptInteractors/UseQPPaper";
 import UseQpPaperRule from "./QPScriptInteractors/UseQPPaperRule";
-import utils from "../utils/utils";
 import React from "react";
 import AutoSend from "./QPScriptInteractors/AutoSend";
 
-let setting=null
-const loadSetting=function ()
-{
-  console.log('执行加载函数');
-  utils.doPost({
-    api:'qp.ui.settings.get',
-    routerUrl:'https://www.enni.group/netserver/router.aspx',
-    params:{
-      scope:'User',
-      names:'BagsHandlerSetting',
-    },success:(res)=>
-    {
-      console.log('执行完了post之后是:', res);
-      if(res.Success&&res.Settings&&res.Settings.length>0)
-      {
-        if (res.Settings[0].Name==='BagsHandlerSetting') {
-          setting = JSON.parse(res.Settings[0].JsonContent);
-          console.log('设置setting是:', setting);
-        }
-      }
-    },
-    session:'1717',
-  }).catch(reason => console.log(reason))
-}
-loadSetting();
+const getImseConfig = () => (typeof window !== 'undefined' && window.__IMSE_CONFIG__) || {};
 class QPScriptProcessor {
 
   //当播放器需要脚本处理器给播放器一个页面信息时,调用这个方法,该方法的参数 依次为 需要根据哪个片段来获取dom,清空之前正在询问的问题片段信息函数,改变当前播放的脚本的函数,通过片段index获取片段的函数
@@ -43,11 +18,6 @@ class QPScriptProcessor {
     {snippet,clearInteractingQuestionFunc, showHideInteractingDomFunc, changeSnippetFunc, getSnippetByIndexFunc}
   )
   {
-    //region 如果没有设置 先获取设置
-    if (!setting) {
-      loadSetting();
-    }
-    //endregion
     //region 如果是需要输入手机号
     if (snippet.index.indexOf("setSenderMobile") >= 0) {
       return <SenderMobileInputForm onSubmit={() => {
@@ -72,7 +42,7 @@ class QPScriptProcessor {
           // content:<Button size={'large'} type={'primary'} danger>确认</Button>
           content: <div>
             <div>选项为图片</div>
-            <img src={'https://www.enni.group/file/test2.png'} className={classNames.img} alt={'选项图片'}/>
+            <img src={getImseConfig().tutorialOptionImageUrl || ''} className={classNames.img} alt={'选项图片'}/>
           </div>
         },
         {
@@ -103,7 +73,6 @@ class QPScriptProcessor {
           // content:<Button size={'large'} type={'primary'} danger>确认</Button>
           content: <div>
             <div>将使用快递单作为商品详单,但快递单不具备自动切纸功能,可能会造成浪费哦</div>
-            {/*<img src={'https://www.enni.group/file/test2.png'} className={classNames.img}/>*/}
           </div>
         },
         {
@@ -260,7 +229,7 @@ class QPScriptProcessor {
         //endregion
       //region 启用速配单和速派单的条件设置页面
       else if (snippet.index === 'autoPrintRule.initMovieSet7.questionWithWaiter.howMuchUseQPPaper') {
-        return <UseQpPaperRule setting={setting} onSubmit={e => {
+        return <UseQpPaperRule onSubmit={e => {
           console.log('确定后的设置内容是:', e);
           // message.warn('这个地方要保存到服务器上,然后跳转到下一个问题');
           clearInteractingQuestionFunc();

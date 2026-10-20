@@ -14,7 +14,6 @@ function SenderMobileInputForm(props) {
         <div className={classNames.main}>
             {/*<div className={classNames.content}>*/}
             <div id={'左侧图片'} className={classNames.leftContent}>
-                {/*<img src="https://www.enni.group/file/test2.png" alt="图片" className={classNames.img}/>*/}
             </div>
             <div id={'右侧输入'} className={classNames.rightContent}>
                 <div>请输入用于打印在快递单上的发件人手机号码</div>
