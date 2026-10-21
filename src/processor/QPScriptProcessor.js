@@ -33,6 +33,7 @@ class QPScriptProcessor {
       //endregion
     //region 另外如果是需要选择如何打印商品详情
     else if (snippet.index === 'selectPrintMode.initMovieSet4.questionWithWaiter.selectPrintMode') {
+      const tutorialOptionImageUrl = getImseConfig().tutorialOptionImageUrl;
       let answerOptions = [
         {
           id: 'a',
@@ -42,7 +43,7 @@ class QPScriptProcessor {
           // content:<Button size={'large'} type={'primary'} danger>确认</Button>
           content: <div>
             <div>选项为图片</div>
-            <img src={getImseConfig().tutorialOptionImageUrl || ''} className={classNames.img} alt={'选项图片'}/>
+            {tutorialOptionImageUrl ? <img src={tutorialOptionImageUrl} className={classNames.img} alt={'选项图片'}/> : null}
           </div>
         },
         {

@@ -5,13 +5,17 @@ class Utils {
     normalizeImseMovieUrl = (value) => {
         if (typeof value === 'string') {
             const config = getImseConfig();
-            const prefix = config.legacyMovieUrlPrefix;
-            if (prefix && value.startsWith(prefix)) {
-                const fileName = value.slice(prefix.length);
-                const resourceId = (config.legacyMovieFiles || {})[fileName];
-                if (resourceId) {
-                    return `${config.movieMediaUrlPrefix || '/media/'}${encodeURIComponent(resourceId)}`;
-                }
+            const filePath = value.split(/[?#]/, 1)[0];
+            const encodedFileName = filePath.slice(filePath.lastIndexOf('/') + 1);
+            let fileName = encodedFileName;
+            try {
+                fileName = decodeURIComponent(encodedFileName);
+            } catch (_) {
+                // Keep the encoded name; only known filenames are mapped below.
+            }
+            const resourceId = (config.legacyMovieFiles || {})[fileName];
+            if (resourceId) {
+                return `${config.movieMediaUrlPrefix || '/media/'}${encodeURIComponent(resourceId)}`;
             }
             return value;
         }

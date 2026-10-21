@@ -6,7 +6,7 @@ The old `IMSEServer.csproj` directly referenced `DomainBase`, `ServerBase`, and 
 
 The service requires a specific local bind IP and port and rejects wildcard addresses. Use loopback when Nginx is on the same host, or the service host's VPN address when Nginx is remote. Set `IMSE_BIND`, `IMSE_PORT`, `IMSE_SETTINGS_ROOT`, `IMSE_MEDIA_ROOT`, and a random `IMSE_ACCESS_TOKEN` of at least 32 UTF-8 bytes through the protected service environment. Generate the token outside the repository; the checked-in environment example intentionally leaves it blank so the service fails closed until configured. The settings and media directories must live outside the repository. No legacy settings, movie files, credentials, or server snapshots belong in this project.
 
-`IMSE_ACCESS_TOKEN` is not shipped to the browser. A same-origin gateway must authorize the editor user before injecting it as a Bearer token when proxying the API route; do not expose the write route as an unauthenticated public endpoint. The browser uses `public/imse-config.js` to select the same-origin endpoints and map the seven old tutorial video URLs to the allowlisted media route; deployments may replace that file with the correct paths, without putting credentials in it.
+`IMSE_ACCESS_TOKEN` is not shipped to the browser. A same-origin gateway must authorize the editor user before injecting it as a Bearer token when proxying the API route; do not expose the write route as an unauthenticated public endpoint. The browser uses `public/imse-config.js` to select same-origin endpoints and map only seven known tutorial video filenames to the allowlisted media route. Mapping does not depend on the previous server hostname, and unknown filenames remain unchanged.
 
 Build with:
 

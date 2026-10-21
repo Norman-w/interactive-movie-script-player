@@ -308,9 +308,12 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
         const movieIndex = this.state.moviesSources.length + 1;
         const movieId = 'initMovieSet' + movieIndex;
         const config = (window as any).__IMSE_CONFIG__ || {};
-        const testMovieUrl = config.testMovieUrlTemplate || '';
         const movieUrl = (config.defaultMovieUrls || {})[movieId] ||
-            testMovieUrl.replace('{index}', String(movieIndex + 1));
+            '';
+        if (!movieUrl) {
+            message.warning('尚未配置该视频素材地址');
+            return;
+        }
         const moviePoster = config.defaultMoviePosterUrl || '';
         let mf = new MovieScriptFactory();
         // console.log(this.initMovieState);
@@ -557,7 +560,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
 success:()=>
 {
   message.success('保存脚本信息成功').then(r=>console.log(r));
-},errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+},errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 await utils.doPost({
   api:'setting.save',
@@ -569,7 +572,7 @@ await utils.doPost({
   success:()=>
   {
     message.success('保存片源信息成功').then(r=>console.log(r));
-  },errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+  },errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 }
   async onClickLoadFromCloudBtn(){
@@ -594,7 +597,7 @@ await utils.doPost({
   message.success('加载云端脚本设置成功');
 }
 console.log('执行读取请求成功:', ret);
-},errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+},errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 //region 加载保存的视频资源脚本
 await utils.doPost({
@@ -620,7 +623,7 @@ await utils.doPost({
     }
     console.log('执行读取请求成功:', ret);
   },
-   errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+   errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 //endregion
 }

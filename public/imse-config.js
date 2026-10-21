@@ -1,9 +1,8 @@
 // This file is public. Configure URLs only; never place access tokens here.
 window.__IMSE_CONFIG__ = Object.freeze({
   settingsApiUrl: '/InteractiveMovieScriptEditor/Default.aspx',
-  tutorialOptionImageUrl: 'https://www.enni.group/file/test2.png',
+  tutorialOptionImageUrl: '',
   movieMediaUrlPrefix: '/media/',
-  legacyMovieUrlPrefix: 'https://www.enni.group/qp/pdd/moviescriptplayer/src/',
   legacyMovieFiles: {
     '1.introduce.mp4': 'initMovieSet1',
     '2.setSenderMobile.mp4': 'initMovieSet2',
@@ -21,6 +20,5 @@ window.__IMSE_CONFIG__ = Object.freeze({
     initMovieSet5: '/media/initMovieSet5',
     initMovieSet6: '/media/initMovieSet6',
     initMovieSet7: '/media/initMovieSet7'
-  },
-  testMovieUrlTemplate: 'https://www.enni.group/file/testmovie/{index}.MP4'
+  }
 });
