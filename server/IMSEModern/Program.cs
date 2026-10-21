@@ -8,8 +8,10 @@ const int maxRequestBytes = 16 * 1024 * 1024;
 var bindText = Environment.GetEnvironmentVariable("IMSE_BIND");
 if (string.IsNullOrWhiteSpace(bindText))
     throw new InvalidOperationException("IMSE_BIND must be set in the service environment.");
-if (!System.Net.IPAddress.TryParse(bindText, out var bindAddress) || !System.Net.IPAddress.IsLoopback(bindAddress))
-    throw new InvalidOperationException("IMSE_BIND must be a loopback IP address.");
+if (!System.Net.IPAddress.TryParse(bindText, out var bindAddress) ||
+    bindAddress.Equals(System.Net.IPAddress.Any) ||
+    bindAddress.Equals(System.Net.IPAddress.IPv6Any))
+    throw new InvalidOperationException("IMSE_BIND must be a specific local IP address, not a wildcard.");
 
 var portText = Environment.GetEnvironmentVariable("IMSE_PORT");
 if (!int.TryParse(portText, out var port))
@@ -47,7 +49,7 @@ var mediaFiles = new Dictionary<string, string>(StringComparer.Ordinal)
 
 var settingsLocks = new ConcurrentDictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls($"http://{bindAddress}:{port}");
+builder.WebHost.UseUrls(new UriBuilder(Uri.UriSchemeHttp, bindAddress.ToString(), port).Uri.AbsoluteUri);
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBytes);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
