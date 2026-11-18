@@ -149,12 +149,12 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
       //region 读取本地数据
       let moviesJson = localStorage.getItem('movies');
       if (moviesJson) {
-        this.setState({moviesSources: JSON.parse(moviesJson)});
+        this.setState({moviesSources: utils.normalizeImseMediaUrls(JSON.parse(moviesJson))});
       }
       let scriptsJson = localStorage.getItem('scripts');
       if (scriptsJson)
       {
-        this.setState({scripts:JSON.parse(scriptsJson)});
+        this.setState({scripts:utils.normalizeImseMediaUrls(JSON.parse(scriptsJson))});
       }
       //endregion
     }
@@ -305,36 +305,16 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
     onClickAddMovieSourceBtn() {
         if(!this.player)return;
         this.player.load();
-        let movieUrl = 'https://www.enni.group/file/testmovie/' + (this.state.moviesSources.length + 2) + '.MP4';
-        if(this.state.moviesSources.length === 0)
-        {
-            movieUrl = 'https://www.enni.group/qp/pdd/moviescriptplayer/src/1.introduce.mp4';
+        const movieIndex = this.state.moviesSources.length + 1;
+        const movieId = 'initMovieSet' + movieIndex;
+        const config = (window as any).__IMSE_CONFIG__ || {};
+        const movieUrl = (config.defaultMovieUrls || {})[movieId] ||
+            '';
+        if (!movieUrl) {
+            message.warning('尚未配置该视频素材地址');
+            return;
         }
-        else if(this.state.moviesSources.length ===1)
-        {
-            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/2.setSenderMobile.mp4';
-        }
-        else if(this.state.moviesSources.length ===2)
-        {
-            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/feedback.right.mp4';
-        }
-        else if(this.state.moviesSources.length ===3)
-        {
-            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/3.selectPrintMode.mp4';
-        }
-        else if(this.state.moviesSources.length ===4)
-        {
-            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/4.moreThan5How.mp4';
-        }
-        else if(this.state.moviesSources.length ===5)
-        {
-            movieUrl='https://www.enni.group/qp/pdd/moviescriptplayer/src/5.devicePrepare.mp4';
-        }
-        else if(this.state.moviesSources.length ===6)
-        {
-          movieUrl = 'https://www.enni.group/qp/pdd/moviescriptplayer/src/6.autoPrintRule.mp4';
-        }
-        let moviePoster = '';//'https://www.enni.group/file/test2.png';
+        const moviePoster = config.defaultMoviePosterUrl || '';
         let mf = new MovieScriptFactory();
         // console.log(this.initMovieState);
         let movie:IMovie = mf.CreateMovie('initMovieSet' + (this.state.moviesSources.length + 1),
@@ -580,7 +560,7 @@ class InteractiveMovieScriptEditor extends Component<IProp,IState> {
 success:()=>
 {
   message.success('保存脚本信息成功').then(r=>console.log(r));
-},errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+},errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 await utils.doPost({
   api:'setting.save',
@@ -592,7 +572,7 @@ await utils.doPost({
   success:()=>
   {
     message.success('保存片源信息成功').then(r=>console.log(r));
-  },errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+  },errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 }
   async onClickLoadFromCloudBtn(){
@@ -611,13 +591,13 @@ await utils.doPost({
   const scriptKeys = Object.keys(jsonObj);
   const firstScriptId = scriptKeys.length > 0 ? scriptKeys[0] : '';
   this.setState({
-    scripts: jsonObj,
+    scripts: utils.normalizeImseMediaUrls(jsonObj),
     currentSelectScriptId: this.state.currentSelectScriptId || firstScriptId,
   });
   message.success('加载云端脚本设置成功');
 }
 console.log('执行读取请求成功:', ret);
-},errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+},errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 //region 加载保存的视频资源脚本
 await utils.doPost({
@@ -631,7 +611,7 @@ await utils.doPost({
     if (ret && ret.SettingJson)
     {
       let retJson = decodeURIComponent(ret.SettingJson);
-      let jsonObj = JSON.parse(retJson);
+      let jsonObj = utils.normalizeImseMediaUrls(JSON.parse(retJson));
       const firstMovie = jsonObj.length > 0 ? jsonObj[0] : null;
       this.setState((prev) => ({
         moviesSources: jsonObj,
@@ -643,7 +623,7 @@ await utils.doPost({
     }
     console.log('执行读取请求成功:', ret);
   },
-   errProcFunc: undefined, failProcFunc: undefined,session: undefined,routerUrl: undefined
+   errProcFunc: undefined, failProcFunc: undefined,routerUrl: undefined
 })
 //endregion
 }
