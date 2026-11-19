@@ -1,19 +1,92 @@
-# IMSEModern settings API
+# IMSE settings service candidate
 
-ASP.NET Core 10 migration of the legacy `/InteractiveMovieScriptEditor/Default.aspx` settings endpoint. The React editor remains in the repository root and is served separately; this service exposes only the settings API, health endpoint, and allowlisted media route.
+This .NET 10 service reimplements the two file-backed APIs from the legacy
+InteractiveMovieScriptEditor application:
 
-The old `IMSEServer.csproj` directly referenced `DomainBase`, `ServerBase`, and `NormanFastJSON`. This API replaces the old WebForms dispatcher and request/response wrappers for the two implemented settings operations, using the .NET platform JSON APIs; it does not copy those legacy projects or DLLs. In the old `ApiProcessor`, the `session` argument was not used by either settings operation. The new API instead requires a separate service token and accepts it only in the `Authorization: Bearer ...` header; it does not accept a `session` field as a credential.
+- setting.save accepts method, settingname, and settingjson.
+- setting.load accepts method and settingname.
+- The request envelope is a JSON object for POST, or query fields for GET.
+- Responses keep the legacy PascalCase fields (Success, SettingJson, ErrCode,
+  ErrMsg, SubErrCode, SubErrMsg, and IsError).
 
-The service requires a specific local bind IP and port and rejects wildcard addresses. Use loopback when Nginx is on the same host, or the service host's VPN address when Nginx is remote. Set `IMSE_BIND`, `IMSE_PORT`, `IMSE_SETTINGS_ROOT`, `IMSE_MEDIA_ROOT`, and a random `IMSE_ACCESS_TOKEN` of at least 32 UTF-8 bytes through the protected service environment. Generate the token outside the repository; the checked-in environment example intentionally leaves it blank so the service fails closed until configured. The settings and media directories must live outside the repository. No legacy settings, movie files, credentials, or server snapshots belong in this project.
+The old application accepted anonymous requests in its effective IIS
+configuration and concatenated settingname into a filesystem path. This
+candidate requires a configured 32-byte-or-longer access token, accepts it as
+a Bearer token or the legacy session field on POST, restricts names to a safe
+single path segment, and performs atomic file replacement. GET callers must
+send a Bearer header; credentials in URLs are rejected. The token is not
+configured in the staging environment. Until an approved token and caller
+behavior are known, requests return 503 and the API is not exposed through
+Nginx.
 
-The systemd unit uses `%h` for the `enni-imse` service account's home and `%E` for the host's system configuration root. Provision that account with its home set to the configured `ENNI_APP_ROOT`, and install the application under `apps/imse/current` below that root. By default, the protected environment file is `enni/imse.env` below the system configuration root; if `ENNI_CONFIG_ROOT` differs from that location, override `EnvironmentFile` in a systemd drop-in. The checked-in settings/media roots are intentionally empty: set them to the chosen persistent data directories in the external environment file before starting the service.
+The service supports the old application path
+/InteractiveMovieScriptEditor/Default.aspx and a root-relative /Default.aspx
+path. It stores settings under IMSE_SETTINGS_ROOT; it does not read the old
+snapshot's Settings directory automatically.
 
-`IMSE_ACCESS_TOKEN` is not shipped to the browser. A same-origin gateway must authorize the editor user before injecting it as a Bearer token when proxying the API route; do not expose the write route as an unauthenticated public endpoint. The browser uses `public/imse-config.js` to select same-origin endpoints and map only seven known tutorial video filenames to the allowlisted media route. Mapping does not depend on the previous server hostname, and unknown filenames remain unchanged.
+On 2026-10-08, the three legacy snapshot files `movieResources.json`,
+`scripts.json`, and `test.json` were copied into the configured staging
+directory `/var/lib/enni-imse/Settings`. SHA-256 matched each source file;
+the source snapshot remains unchanged. The directory is owned by `enni-imse`
+with mode 0750 and files use mode 0640. Their raw URL-encoded bytes were also
+copied back to this workspace and verified against the staging hashes.
 
-Build with:
+The service now serves an exploratory script-map UI at `/` on loopback port
+31010. It starts from the seven existing storylines and 29 snippets; users can
+open any scene, follow recovered jump references, switch paths, go back, edit
+scene labels and clip times, keep a browser-local draft, and export the legacy
+URL-encoded setting format. Existing script jumps appear as trails on the map;
+at each scene, users can follow the recorded jump or pick another scene freely.
+The seven referenced MP4s were copied from the preserved IIS snapshot into
+`/var/lib/enni-imse/Movies` and hash-checked. An allowlisted `/media/{id}` route
+serves them with byte-range support; the browser loads a clip only after the
+user opens it, starts at the scene's saved time, and pauses at its end time.
+The UI still writes edits only to browser storage or an exported file. The
+settings API reports `configured=false` because no access token is installed,
+and no Nginx route exposes the editor.
 
-```sh
-dotnet publish server/IMSEModern/IMSEModern.csproj -c Release -o ./publish
-```
+The full candidate source tree is mirrored on the staging host; code, UI and
+published seed assets are recorded in `SHA256SUMS`. The active staging unit is
+`enni-imse-staging.service`, bound only to `127.0.0.1:31010`.
 
-The source is a migration candidate. No IIS route, production data, gateway, or traffic was changed by adding it to this repository.
+## Legacy UI and editor scope
+
+The captured legacy application contains the `setting.save` and `setting.load`
+API handlers plus three settings files, but its `Default.aspx` only dispatches
+API requests. No editor page or caller reference was found in the captured
+source tree; this does not rule out an external client that was not captured.
+The URL-decoded `scripts.json` contains seven named flows and 29 snippets, with
+redirect/transition references in 13 snippets. This is enough to establish
+that the data models branching scripts, but not enough to reconstruct the old
+editor's exact behavior.
+
+The replacement UI follows
+[`MIGRATION_INTERACTION_DESIGN.md`](../../MIGRATION_INTERACTION_DESIGN.md):
+the map is directly explorable, a small number of choices are shown as cards,
+and navigation is reversible instead of a fixed wizard. The current
+implementation is a loopback-only review build; details and limits are in
+[`IMSE_EDITOR_REBUILD.md`](../../IMSE_EDITOR_REBUILD.md). The UI does not call
+the legacy `setting.save` API; edits remain in browser storage until explicitly
+exported.
+
+The video payload manifest is in `legacy-data/movies/SHA256SUMS`; the full MP4
+files remain in the retained IIS snapshot and on the staging VM, rather than
+being duplicated into this source tree.
+
+## Configuration
+
+See ops/imse.env.example and ops/imse.service.example. Bind to loopback. Keep
+the access token in a root-owned environment file with mode 0600. When the
+service is later connected to a gateway, disable or redact access logging for
+this API path because older callers may carry session in the request.
+
+## Legacy source notes
+
+legacy-contract/ contains the small set of source files copied from the old
+server for protocol review. It is reference material, not a buildable legacy
+project. The deployed DLLs and the sibling DomainBase source are not proven to
+be from the same revision; the legacy SaveSettingRequest source does not
+implement the abstract GetIsSessionRequired method found in the sibling
+source. The request envelope and response serialization were confirmed from
+the deployed HttpContextProcessor.cs, but the exact deployed request-class
+session policy still needs binary/client confirmation.
