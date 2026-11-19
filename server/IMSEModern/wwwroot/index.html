@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f3ee">
+  <title>互动剧本地图 · IMSE</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><b></b></div>
+        <div>
+          <p class="eyebrow">IMSE · INTERACTIVE SCRIPT EDITOR</p>
+          <h1>互动剧本地图</h1>
+        </div>
+      </div>
+      <p class="top-note">从任意片段出发，沿着兴趣去探索。路径可以来回跳转，不用按固定顺序走。</p>
+      <div class="top-actions">
+        <button class="button button-quiet" id="importButton" type="button">导入脚本</button>
+        <button class="button button-primary" id="exportButton" type="button" disabled>导出本机草稿</button>
+        <input id="importInput" class="visually-hidden" type="file" accept=".json,.txt,application/json,text/plain" aria-label="选择脚本设置文件">
+      </div>
+    </header>
+
+    <div class="status-strip" id="statusStrip" role="status" aria-live="polite">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="statusText">正在载入脚本地图…</span>
+      <span class="status-separator">·</span>
+      <span id="countsText">—</span>
+      <span class="status-spacer"></span>
+      <span class="local-only">草稿保存在当前浏览器</span>
+    </div>
+    <div class="recovery-banner" id="recoveryBanner" hidden>
+      <span>找到一份之前导入的本机草稿。</span>
+      <button class="text-button" id="restoreDraftButton" type="button">接着打开</button>
+      <button class="text-button" id="dismissDraftButton" type="button">先不打开</button>
+    </div>
+
+    <main class="layout">
+      <aside class="story-panel panel" aria-labelledby="story-heading">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">STORYLINES</p>
+            <h2 id="story-heading">故事线</h2>
+          </div>
+          <span class="count-bubble" id="storylineCount">—</span>
+        </div>
+        <p class="panel-hint">选一条线看看里面有哪些片段。随时可以换方向。</p>
+        <nav id="storyList" class="story-list" aria-label="故事线列表"></nav>
+        <div class="story-footnote">
+          <span class="sparkle" aria-hidden="true">✳</span>
+          <p>空白故事线也会留在地图上，原有资料不会被删掉。</p>
+        </div>
+      </aside>
+
+      <section class="map-panel panel" aria-labelledby="map-heading">
+        <div class="map-header">
+          <div>
+            <p class="eyebrow">EXPLORE THE STORY</p>
+            <h2 id="map-heading">正在探索 <span id="activeStoryName">—</span></h2>
+            <p class="map-subtitle" id="activeStoryHint">点选地图上的任一片段，或从故事线开始。</p>
+          </div>
+          <button class="button button-quiet back-button" id="backButton" type="button" disabled aria-label="返回上一个片段">↶ <span>回到刚才</span></button>
+        </div>
+
+        <div class="trail-wrap" id="trailWrap" hidden>
+          <span class="trail-label">走过的路</span>
+          <div class="trail" id="trail" aria-label="探索历史"></div>
+        </div>
+
+        <div class="map-surface" id="mapSurface">
+          <div class="map-art" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div class="map-intro">
+            <span class="map-marker" aria-hidden="true">✦</span>
+            <div>
+              <strong id="mapFlowTitle">—</strong>
+              <span id="mapFlowSummary">—</span>
+            </div>
+          </div>
+          <div class="scene-map" id="sceneMap" aria-label="当前故事线片段地图"></div>
+          <div class="empty-map" id="emptyMap" hidden>
+            <div class="empty-orbit" aria-hidden="true"><span>+</span></div>
+            <strong>这条故事线还没有片段</strong>
+            <p>它仍在地图上。你可以先去别的故事线看看。</p>
+          </div>
+          <div class="map-legend">
+            <span><i class="legend-dot legend-question"></i>互动片段</span>
+            <span><i class="legend-dot legend-transition"></i>过场片段</span>
+            <span><i class="legend-dot legend-info"></i>说明片段</span>
+            <span class="legend-note">亮线表示剧本里已写明的跳转</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="detail-panel panel" aria-labelledby="detail-heading">
+        <div class="detail-heading-row">
+          <div>
+            <p class="eyebrow">SCENE NOTES</p>
+            <h2 id="detail-heading">片段详情</h2>
+          </div>
+          <span class="scene-index" id="sceneIndex">—</span>
+        </div>
+
+        <div id="detailEmpty" class="detail-empty">
+          <div class="empty-orbit" aria-hidden="true"><span>↗</span></div>
+          <strong>先选一段看看</strong>
+          <p>地图没有唯一入口。你可以从任何片段开始。</p>
+        </div>
+
+        <div id="detailContent" hidden>
+          <label class="field-label" for="sceneNameInput">片段名称</label>
+          <input class="text-input scene-name-input" id="sceneNameInput" maxlength="100" autocomplete="off">
+          <div class="detail-tags" id="detailTags"></div>
+
+          <div class="clip-card">
+            <div class="clip-decoration" aria-hidden="true"><span class="play-glyph">▶</span><span class="clip-glow"></span></div>
+            <div class="clip-copy">
+              <span class="clip-overline">本段影片</span>
+              <strong id="clipTitle">—</strong>
+              <span id="clipSubtitle">—</span>
+            </div>
+            <button class="play-snippet-button" id="playSnippetButton" type="button" disabled>看这段</button>
+          </div>
+          <div class="clip-player-wrap">
+            <div class="clip-poster" id="clipPoster">
+              <span class="poster-orbit" aria-hidden="true">✦</span>
+              <span>点一下，预览当前片段</span>
+            </div>
+            <video id="clipVideo" controls preload="none" playsinline hidden></video>
+          </div>
+          <p class="media-note" id="mediaNote">视频只会在你点开时载入，并从当前片段的起点播放。</p>
+
+          <div class="time-fields">
+            <label class="time-field">
+              <span>从</span>
+              <input class="text-input time-input" id="startTimeInput" type="number" min="0" step="0.01" inputmode="decimal" aria-label="片段开始时间（秒）">
+              <small>秒</small>
+            </label>
+            <span class="time-arrow" aria-hidden="true">→</span>
+            <label class="time-field">
+              <span>到</span>
+              <input class="text-input time-input" id="endTimeInput" type="number" min="0" step="0.01" inputmode="decimal" aria-label="片段结束时间（秒）">
+              <small>秒</small>
+            </label>
+          </div>
+
+          <section class="route-section" aria-labelledby="route-heading">
+            <div class="route-heading">
+              <h3 id="route-heading">接下来想去哪？</h3>
+              <span class="route-kicker">跟着原路线，或自由探索</span>
+            </div>
+            <div id="routeContent" class="route-content"></div>
+          </section>
+
+          <div class="detail-footer">
+            <span class="type-detail" id="typeDetail">—</span>
+            <span class="saved-indicator" id="savedIndicator">本机草稿已保存</span>
+          </div>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="footer-bar">
+      <span><strong>互动剧本地图</strong> · 当前仅在本机保存与导出，不会写回服务器。</span>
+      <button type="button" class="text-button" id="resetButton" disabled>恢复导入时的原稿</button>
+    </footer>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </div>
+</body>
+</html>

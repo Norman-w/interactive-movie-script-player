@@ -6,34 +6,30 @@ using System.Text.Json;
 const int maxRequestBytes = 16 * 1024 * 1024;
 
 var bindText = Environment.GetEnvironmentVariable("IMSE_BIND");
-if (string.IsNullOrWhiteSpace(bindText))
-    throw new InvalidOperationException("IMSE_BIND must be set in the service environment.");
-if (!System.Net.IPAddress.TryParse(bindText, out var bindAddress) ||
-    bindAddress.Equals(System.Net.IPAddress.Any) ||
-    bindAddress.Equals(System.Net.IPAddress.IPv6Any))
-    throw new InvalidOperationException("IMSE_BIND must be a specific local IP address, not a wildcard.");
+if (string.IsNullOrWhiteSpace(bindText)) bindText = "127.0.0.1";
+if (!System.Net.IPAddress.TryParse(bindText, out var bindAddress))
+    throw new InvalidOperationException("IMSE_BIND must be an IP address.");
 
 var portText = Environment.GetEnvironmentVariable("IMSE_PORT");
-if (!int.TryParse(portText, out var port))
-    throw new InvalidOperationException("IMSE_PORT must be set in the service environment.");
+if (!int.TryParse(portText, out var port)) port = 31010;
 if (port is < 1 or > 65535)
     throw new InvalidOperationException("IMSE_PORT is outside the valid range.");
 
 var configuredToken = Environment.GetEnvironmentVariable("IMSE_ACCESS_TOKEN");
 if (string.IsNullOrEmpty(configuredToken))
-    throw new InvalidOperationException("IMSE_ACCESS_TOKEN must be set in the service environment.");
-if (Encoding.UTF8.GetByteCount(configuredToken) < 32)
+{
+    configuredToken = null;
+}
+else if (Encoding.UTF8.GetByteCount(configuredToken) < 32)
+{
     throw new InvalidOperationException("IMSE_ACCESS_TOKEN must contain at least 32 UTF-8 bytes.");
+}
 
-var settingsRootText = Environment.GetEnvironmentVariable("IMSE_SETTINGS_ROOT");
-if (string.IsNullOrWhiteSpace(settingsRootText))
-    throw new InvalidOperationException("IMSE_SETTINGS_ROOT must be set in the service environment.");
-var settingsRoot = Path.GetFullPath(settingsRootText);
+var settingsRoot = Path.GetFullPath(
+    Environment.GetEnvironmentVariable("IMSE_SETTINGS_ROOT") ?? "/var/lib/enni-imse/Settings");
 Directory.CreateDirectory(settingsRoot);
-var mediaRootText = Environment.GetEnvironmentVariable("IMSE_MEDIA_ROOT");
-if (string.IsNullOrWhiteSpace(mediaRootText))
-    throw new InvalidOperationException("IMSE_MEDIA_ROOT must be set in the service environment.");
-var mediaRoot = Path.GetFullPath(mediaRootText);
+var mediaRoot = Path.GetFullPath(
+    Environment.GetEnvironmentVariable("IMSE_MEDIA_ROOT") ?? "/var/lib/enni-imse/Movies");
 Directory.CreateDirectory(mediaRoot);
 
 var mediaFiles = new Dictionary<string, string>(StringComparer.Ordinal)
@@ -49,7 +45,7 @@ var mediaFiles = new Dictionary<string, string>(StringComparer.Ordinal)
 
 var settingsLocks = new ConcurrentDictionary<string, SemaphoreSlim>(StringComparer.OrdinalIgnoreCase);
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls(new UriBuilder(Uri.UriSchemeHttp, bindAddress.ToString(), port).Uri.AbsoluteUri);
+builder.WebHost.UseUrls($"http://{bindAddress}:{port}");
 builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = maxRequestBytes);
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
@@ -57,6 +53,8 @@ builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
 var app = builder.Build();
 
+app.UseStaticFiles();
+app.MapGet("/", () => Results.Redirect("/index.html"));
 app.MapGet("/media/{resourceId}", (string resourceId) =>
 {
     if (!mediaFiles.TryGetValue(resourceId, out var fileName))
@@ -73,7 +71,7 @@ app.MapGet("/healthz", () => Results.Json(new
 {
     status = "ok",
     service = "imse",
-    configured = true
+    configured = configuredToken is not null
 }));
 
 app.MapMethods("/InteractiveMovieScriptEditor/Default.aspx", ["GET", "POST"], (Delegate)HandleRequestAsync);
@@ -83,6 +81,9 @@ app.Run();
 
 async Task<IResult> HandleRequestAsync(HttpContext context)
 {
+    if (configuredToken is null)
+        return CreateError("503", "service not configured", StatusCodes.Status503ServiceUnavailable);
+
     Dictionary<string, string> values;
     try
     {
@@ -101,7 +102,7 @@ async Task<IResult> HandleRequestAsync(HttpContext context)
         return CreateError("413", "request body too large", StatusCodes.Status413PayloadTooLarge);
     }
 
-    var suppliedToken = GetSuppliedToken(context);
+    var suppliedToken = GetSuppliedToken(context, values);
     if (!TokenMatches(configuredToken, suppliedToken))
         return CreateError("401", "unauthorized", StatusCodes.Status401Unauthorized);
 
@@ -206,14 +207,18 @@ static async Task<Dictionary<string, string>> ReadRequestValuesAsync(HttpContext
     throw new InvalidDataException("Unsupported content type.");
 }
 
-static string? GetSuppliedToken(HttpContext context)
+static string? GetSuppliedToken(HttpContext context, IReadOnlyDictionary<string, string> values)
 {
     var authorization = context.Request.Headers.Authorization.ToString();
     const string bearerPrefix = "Bearer ";
     if (authorization.StartsWith(bearerPrefix, StringComparison.OrdinalIgnoreCase))
         return authorization[bearerPrefix.Length..].Trim();
 
-    return null;
+    // Never accept a credential in a URL. GET callers must send the Bearer header.
+    if (HttpMethods.IsGet(context.Request.Method))
+        return null;
+
+    return TryGetValueIgnoreCase(values, "session", out var legacySession) ? legacySession : null;
 }
 
 static bool TokenMatches(string configuredToken, string? suppliedToken)
